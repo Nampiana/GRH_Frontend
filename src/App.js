@@ -1,16 +1,17 @@
 import './App.css';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext"; 
+import { AuthProvider } from "./contexts/AuthContext";
 import HomePage from "./pages/auth/HomePage";
 import HomePages from "./pages/auth/HomePages";
 import Login from "./pages/auth/Login"
 import Societe from "./pages/societe/societe"
 import CreateSociete from "./pages/societe/createSociete"
+import EditSociete from "./pages/societe/editSociete";
 
 function App() {
   return (
     <Router>
-      <AuthProvider>  
+      <AuthProvider>
         <Routes>
           {/* Routes des authentification*/}
           <Route path="/" element={<HomePage />} />
@@ -20,6 +21,7 @@ function App() {
           {/* Routes des societe*/}
           <Route path="/societe" element={<Societe />} />
           <Route path="/create-societe" element={<CreateSociete />} />
+          <Route path="/edit-societe/:id" element={<EditSociete />} />
         </Routes>
       </AuthProvider>
     </Router>
