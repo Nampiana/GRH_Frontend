@@ -113,7 +113,7 @@ function Societe() {
                           {/* ✅ Bouton bien centré en bas de la carte */}
                           <div className="card-footer text-center">
                             <button
-                              className="btn btn-success btn-sm"
+                              className="btn btn-primary btn-round"
                               onClick={navigateToCreateUser}
                             >
                               Créer Société
