@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { AuthContext } from "../contexts/AuthContext";
 
 function Topbar() {
+  const { logout } = useContext(AuthContext);
   // Fonction pour la gestion du plein écran (exemple)
   const toggleFullScreen = () => {
     if (!document.fullscreenElement) {
@@ -17,13 +19,13 @@ function Topbar() {
     <nav className="navbar header-navbar pcoded-header">
       <div className="navbar-wrapper">
         <div className="navbar-logo">
-          <a className="mobile-menu" id="mobile-collapse" href="#!">
+          <a className="mobile-menu" id="mobile-collapse" >
             <i className="ti-menu"></i>
           </a>
           <a className="mobile-search morphsearch-search" href="#">
             <i className="ti-search"></i>
           </a>
-          <Link to="/">
+          <Link to="/home">
             <img className="img-fluid" src="assets/images/logo.png" alt="Theme-Logo" />
           </Link>
           <a className="mobile-options">
@@ -105,10 +107,17 @@ function Topbar() {
                   </a>
                 </li>
                 <li>
-                  <Link to="/auth-signin">
-                    <i className="ti-layout-sidebar-left"></i> Logout
-                  </Link>
-                </li>
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    logout();
+                  }}
+                  style={{ cursor: "pointer" }}
+                >
+                  <i className="ti-layout-sidebar-left"></i> Logout
+                </a>
+              </li>
               </ul>
             </li>
           </ul>

@@ -1,7 +1,10 @@
-import React from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { AuthContext } from "../contexts/AuthContext";
 
 function Sidebar() {
+  const { logout } = useContext(AuthContext);
+
   return (
     <nav className="pcoded-navbar">
       <div className="sidebar_toggle">
@@ -28,7 +31,13 @@ function Sidebar() {
               <li className="more-details">
                 <Link to="#"><i className="ti-user"></i>View Profile</Link>
                 <Link to="#"><i className="ti-settings"></i>Settings</Link>
-                <Link to="/auth-sign-in">
+                <Link 
+                to="#"
+                onClick={(e) => {
+                  e.preventDefault(); // empêche la navigation inutile
+                  logout();           // appelle ta fonction logout
+                }}
+                >
                   <i className="ti-layout-sidebar-left"></i>Logout
                 </Link>
               </li>
@@ -51,13 +60,13 @@ function Sidebar() {
         </div>
         <ul className="pcoded-item pcoded-left-item">
           <li className="active">
-            <Link to="/">
+            <Link to="/societe">
               <span className="pcoded-micon">
                 <i className="ti-home"></i>
                 <b>D</b>
               </span>
               <span className="pcoded-mtext" data-i18n="nav.dash.main">
-                Dashboard
+                Sociète
               </span>
               <span className="pcoded-mcaret"></span>
             </Link>
