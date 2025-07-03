@@ -17,7 +17,7 @@ const HomePage = () => {
         const userData = JSON.parse(localStorage.getItem("user"));
 
         if (userData) {
-            navigate("/Societe"); 
+            navigate("/societe"); 
         } else {
           navigate("/login");
         }

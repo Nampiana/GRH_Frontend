@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }) => {
   
       // Redirection en fonction du rôle
       if (userData) {
-        navigate('/Societe');
+        navigate('/societe');
       } else {
         navigate('/');
       }

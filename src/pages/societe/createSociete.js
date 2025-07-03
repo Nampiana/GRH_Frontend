@@ -3,9 +3,13 @@ import Sidebar from "../../templates/sidebar";
 import Topbar from "../../templates/topbar";
 import useSociete from "../../hook/societe/societeHook";
 import { useNavigate } from "react-router-dom";
+import useTemplateScripts from "../../utils/useTemplateScripts";
 
 function CreateSociete() {
+  useTemplateScripts();
     const { societe, createSociete } = useSociete();
+    const [successMessage, setSuccessMessage] = useState("");
+
     const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
@@ -18,38 +22,27 @@ function CreateSociete() {
     };
 
      const handleSubmit = (e) => {
-        e.preventDefault();
+  e.preventDefault();
 
-        const dataToSend = {
-            nom_societe: formData.nom_societe,
-        };
+  const dataToSend = {
+    nom_societe: formData.nom_societe,
+  };
 
-        createSociete(dataToSend, () => {
-            // Réinitialiser le formulaire
-            setFormData({ nom_societe: "" });
-        });
+  createSociete(dataToSend, () => {
+    setFormData({ nom_societe: "" });
+    setSuccessMessage("Société enregistrée avec succès ✅");
 
-        navigate("/societe")
-    };
+    // Masquer automatiquement après 3 secondes
+    setTimeout(() => {
+      setSuccessMessage("");
+      navigate("/societe");
+    }, 1000);
+  });
+};
 
   return (
     <>
-      <div class="theme-loader">
-        <div class="ball-scale">
-            <div class='contain'>
-                <div class="ring"><div class="frame"></div></div>
-                <div class="ring"><div class="frame"></div></div>
-                <div class="ring"><div class="frame"></div></div>
-                <div class="ring"><div class="frame"></div></div>
-                <div class="ring"><div class="frame"></div></div>
-                <div class="ring"><div class="frame"></div></div>
-                <div class="ring"><div class="frame"></div></div>
-                <div class="ring"><div class="frame"></div></div>
-                <div class="ring"><div class="frame"></div></div>
-                <div class="ring"><div class="frame"></div></div>
-            </div>
-        </div>
-    </div>
+      
       <div id="pcoded" className="pcoded">
         <div className="pcoded-overlay-box"></div>
         <div className="pcoded-container navbar-wrapper">
@@ -65,6 +58,11 @@ function CreateSociete() {
                         <div class="card">
                             <div class="card-header">
                                 <h5>Ajouter un socièté</h5>
+                                {successMessage && (
+                                  <div className="alert alert-success mt-3" role="alert">
+                                    {successMessage}
+                                  </div>
+                                )}
                                 <div class="card-header-right"><i class="icofont icofont-spinner-alt-5"></i></div>
                             </div>
                             <div class="card-block">

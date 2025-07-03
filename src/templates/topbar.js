@@ -1,9 +1,14 @@
 import React, { useContext, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
+import useTemplateScripts from "../utils/useTemplateScripts";
 
 function Topbar() {
+  useTemplateScripts();
   const { logout } = useContext(AuthContext);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+const [logoutSuccess, setLogoutSuccess] = useState(false);
+
   // Fonction pour la gestion du plein écran (exemple)
   const toggleFullScreen = () => {
     if (!document.fullscreenElement) {
@@ -16,6 +21,8 @@ function Topbar() {
   };
 
   return (
+  
+  <>
     <nav className="navbar header-navbar pcoded-header">
       <div className="navbar-wrapper">
         <div className="navbar-logo">
@@ -44,7 +51,7 @@ function Topbar() {
             </li>
 
             <li>
-              <a href="#!" onClick={toggleFullScreen}>
+              <a  onClick={toggleFullScreen}>
                 <i className="ti-fullscreen"></i>
               </a>
             </li>
@@ -111,7 +118,7 @@ function Topbar() {
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    logout();
+                    setShowLogoutModal(true); // 👉 afficher le modal
                   }}
                   style={{ cursor: "pointer" }}
                 >
@@ -124,6 +131,39 @@ function Topbar() {
         </div>
       </div>
     </nav>
+
+    {showLogoutModal && (
+        <div className="modal show d-block" tabIndex="-1" role="dialog" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <div className="modal-dialog" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title text-danger">Confirmer la déconnexion</h5>
+                <button type="button" className="close" onClick={() => setShowLogoutModal(false)}>
+                  <span>&times;</span>
+                </button>
+              </div>
+              <div className="modal-body">
+                <p>Êtes-vous sûr de vouloir vous déconnecter ?</p>
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={() => setShowLogoutModal(false)}>
+                  Annuler
+                </button>
+                <button
+                  className="btn btn-danger"
+                  onClick={() => {
+                      logout();
+                  }}
+                >
+                  Se déconnecter
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+</>
   );
 }
 

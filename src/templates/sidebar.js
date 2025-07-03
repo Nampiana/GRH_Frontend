@@ -1,8 +1,10 @@
 import React, { useContext, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
+import useTemplateScripts from "../utils/useTemplateScripts";
 
 function Sidebar() {
+  useTemplateScripts();
   const { logout } = useContext(AuthContext);
 
   return (

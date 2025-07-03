@@ -3,14 +3,21 @@ import Sidebar from "../../templates/sidebar";
 import Topbar from "../../templates/topbar";
 import { useNavigate } from "react-router-dom";
 import useSociete from "../../hook/societe/societeHook";
+import useTemplateScripts from "../../utils/useTemplateScripts";
 
 function Societe() {
+  useTemplateScripts();
   const { societe, updateSociete, deleteSociete } = useSociete();
   const navigate = useNavigate();
 
   const [selectedSociete, setSelectedSociete] = useState(null);
   const [nomSociete, setNomSociete] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [societeToDelete, setSocieteToDelete] = useState(null);
+  const [successMessage, setSuccessMessage] = useState("");
+
+
 
   const navigateToCreateUser = () => {
     navigate("/create-societe");
@@ -22,12 +29,18 @@ function Societe() {
     setShowModal(true);
   };
 
-  const handleUpdate = () => {
-    updateSociete(selectedSociete.id, { nom_societe: nomSociete }, () => {
+ const handleUpdate = () => {
+  updateSociete(selectedSociete.id, { nom_societe: nomSociete }, () => {
+    setSuccessMessage("Société modifiée avec succès ✅");
+
+    // Masquer le message et fermer le modal après 2 secondes
+    setTimeout(() => {
       setShowModal(false);
       setSelectedSociete(null);
-    });
-  };
+      setSuccessMessage("");
+    }, 2000);
+  });
+};
 
   const closeModal = () => {
     setShowModal(false);
@@ -36,44 +49,6 @@ function Societe() {
 
   return (
     <>
-      {/* Préloader (inutile si tu ne l'utilises pas dynamiquement) */}
-      <div class="theme-loader">
-        <div class="ball-scale">
-          <div class='contain'>
-            <div class="ring">
-              <div class="frame"></div>
-            </div>
-            <div class="ring">
-              <div class="frame"></div>
-            </div>
-            <div class="ring">
-
-              <div class="frame"></div>
-            </div>
-            <div class="ring">
-              <div class="frame"></div>
-            </div>
-            <div class="ring">
-              <div class="frame"></div>
-            </div>
-            <div class="ring">
-              <div class="frame"></div>
-            </div>
-            <div class="ring">
-              <div class="frame"></div>
-            </div>
-            <div class="ring">
-              <div class="frame"></div>
-            </div>
-            <div class="ring">
-              <div class="frame"></div>
-            </div>
-            <div class="ring">
-              <div class="frame"></div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <div id="pcoded" className="pcoded">
         <div className="pcoded-overlay-box"></div>
@@ -136,9 +111,8 @@ function Societe() {
                                         <button
                                           className="btn btn-danger btn-sm"
                                           onClick={() => {
-                                            if (window.confirm("Êtes-vous sûr de vouloir supprimer cette société ?")) {
-                                              deleteSociete(societe.id);
-                                            }
+                                            setSocieteToDelete(societe);
+                                            setShowDeleteModal(true);
                                           }}
                                         >
                                           Supprimer
@@ -188,6 +162,11 @@ function Societe() {
                 </button>
               </div>
               <div className="modal-body">
+                 {successMessage && (
+                    <div className="alert alert-success" role="alert">
+                      {successMessage}
+                    </div>
+                  )}
                 <div className="form-group">
                   <label>Nom société</label>
                   <input
@@ -203,13 +182,52 @@ function Societe() {
                   Annuler
                 </button>
                 <button className="btn btn-primary" onClick={handleUpdate}>
-                  Confirmer modification
+                  Confirmer
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
+
+            {showDeleteModal && (
+        <div
+          className="modal show d-block"
+          tabIndex="-1"
+          role="dialog"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
+          <div className="modal-dialog" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title text-danger">Confirmer la suppression</h5>
+                <button type="button" className="close" onClick={() => setShowDeleteModal(false)}>
+                  <span>&times;</span>
+                </button>
+              </div>
+              <div className="modal-body">
+                <p>Êtes-vous sûr de vouloir supprimer <strong>{societeToDelete?.nom_societe}</strong> ?</p>
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>
+                  Annuler
+                </button>
+                <button
+                  className="btn btn-danger"
+                  onClick={() => {
+                    deleteSociete(societeToDelete.id);
+                    setShowDeleteModal(false);
+                    setSocieteToDelete(null);
+                  }}
+                >
+                  Supprimer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </>
   );
 }
