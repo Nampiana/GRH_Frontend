@@ -29,18 +29,18 @@ function Societe() {
     setShowModal(true);
   };
 
- const handleUpdate = () => {
-  updateSociete(selectedSociete.id, { nom_societe: nomSociete }, () => {
-    setSuccessMessage("Société modifiée avec succès ✅");
+  const handleUpdate = () => {
+    updateSociete(selectedSociete.id, { nom_societe: nomSociete }, () => {
+      setSuccessMessage("Société modifiée avec succès ✅");
 
-    // Masquer le message et fermer le modal après 2 secondes
-    setTimeout(() => {
-      setShowModal(false);
-      setSelectedSociete(null);
-      setSuccessMessage("");
-    }, 2000);
-  });
-};
+      // Masquer le message et fermer le modal après 2 secondes
+      setTimeout(() => {
+        setShowModal(false);
+        setSelectedSociete(null);
+        setSuccessMessage("");
+      }, 2000);
+    });
+  };
 
   const closeModal = () => {
     setShowModal(false);
@@ -91,16 +91,34 @@ function Societe() {
                               <table className="table">
                                 <thead>
                                   <tr>
-                                    <th>ID</th>
                                     <th>Nom société</th>
+                                    <th>Logo</th>
+                                    <th>Siège</th>
+                                    <th>Téléphone</th>
+                                    <th>Fax</th>
+                                    <th>CNAPS</th>
+                                    <th>Numéro banque</th>
+                                    <th>Nom banque</th>
+                                    <th>Adresse banque</th>
+                                    <th>CP banque</th>
+                                    <th>Ville banque</th>
                                     <th>Action</th>
                                   </tr>
                                 </thead>
                                 <tbody>
                                   {societe.map((societe) => (
                                     <tr key={societe.id}>
-                                      <td>{societe.id}</td>
                                       <td>{societe.nom_societe}</td>
+                                      <td>{societe.logo}</td>
+                                      <td>{societe.siege}</td>
+                                      <td>{societe.telephone}</td>
+                                      <td>{societe.numero_fax}</td>
+                                      <td>{societe.numero_cnaps}</td>
+                                      <td>{societe.numero_banque}</td>
+                                      <td>{societe.nom_banque}</td>
+                                      <td>{societe.adresse_banque}</td>
+                                      <td>{societe.cp_banque}</td>
+                                      <td>{societe.ville_banque}</td>
                                       <td>
                                         <button
                                           className="btn btn-warning btn-sm mr-2"
@@ -162,11 +180,11 @@ function Societe() {
                 </button>
               </div>
               <div className="modal-body">
-                 {successMessage && (
-                    <div className="alert alert-success" role="alert">
-                      {successMessage}
-                    </div>
-                  )}
+                {successMessage && (
+                  <div className="alert alert-success" role="alert">
+                    {successMessage}
+                  </div>
+                )}
                 <div className="form-group">
                   <label>Nom société</label>
                   <input
@@ -190,7 +208,7 @@ function Societe() {
         </div>
       )}
 
-            {showDeleteModal && (
+      {showDeleteModal && (
         <div
           className="modal show d-block"
           tabIndex="-1"
