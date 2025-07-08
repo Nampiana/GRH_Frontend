@@ -4,6 +4,7 @@ import Topbar from "../../templates/topbar";
 import useSociete from "../../hook/societe/societeHook";
 import { useNavigate } from "react-router-dom";
 import useTemplateScripts from "../../utils/useTemplateScripts";
+import SocieteServices from "../../services/societe/societeService"
 
 function CreateSociete() {
   useTemplateScripts();
@@ -36,6 +37,8 @@ function CreateSociete() {
 
     const dataToSend = { ...formData }; // envoie tout le formulaire
 
+    console.log("Data to send:", dataToSend);
+
     createSociete(dataToSend, () => {
       setFormData({
         nom_societe: "",
@@ -59,6 +62,18 @@ function CreateSociete() {
       }, 1000);
     });
   };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      SocieteServices.uploadLogo(file)
+        .then(res => {
+          setFormData((prev) => ({ ...prev, logo: res.data }));
+        })
+        .catch(err => console.error(err));
+    }
+  };
+
 
 
   return (
@@ -105,12 +120,13 @@ function CreateSociete() {
                                 <label class="col-sm-2 col-form-label">Logo</label>
                                 <div class="col-sm-10">
                                   <input
-                                    type="text"
+                                    type="file"
                                     className="form-control"
                                     name="logo"
-                                    value={formData.logo}
-                                    onChange={handleChange}
+                                    accept="image/*"
+                                    onChange={(e) => handleFileChange(e)}
                                   />
+
                                 </div>
                               </div>
 

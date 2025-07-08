@@ -21,6 +21,14 @@ class SocieteServices {
   delete(id) {
     return axios.delete(ApiUrl + `/societe/${id}`, header());
   }
+
+  uploadLogo(file) {
+    const formData = new FormData();
+    formData.append("file", file);
+    return axios.post(ApiUrl + "/societe/upload-logo", formData, header("image"));
+}
+
+
 }
 
 
