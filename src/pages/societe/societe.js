@@ -8,7 +8,7 @@ import SocieteServices from "../../services/societe/societeService";
 
 function Societe() {
   useTemplateScripts();
-  const { societe, updateSociete, deleteSociete } = useSociete();
+  const { societe, createSociete, updateSociete, deleteSociete, fetchSociete, totalPages, currentPage, setCurrentPage, searchSociete } = useSociete();
   const navigate = useNavigate();
 
   const [selectedSociete, setSelectedSociete] = useState(null);
@@ -31,13 +31,16 @@ function Societe() {
   const [societeToDelete, setSocieteToDelete] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
 
+  const [searchKeyword, setSearchKeyword] = useState("");
+
+
   const navigateToCreateUser = () => {
     navigate("/create-societe");
   };
 
   const handleEditClick = (societe) => {
     setSelectedSociete(societe);
-    setNomSociete(societe.nom_societe || "");
+    setNomSociete(societe.nomSociete || "");
     setLogo(societe.logo || "");
     setSiege(societe.siege || "");
     setAdresse(societe.adresse || "");
@@ -55,7 +58,7 @@ function Societe() {
   const handleUpdate = () => {
     const updatedSociete = {
       ...selectedSociete,
-      nom_societe: nomSociete,
+      nomSociete: nomSociete,
       logo: logo,
       siege: siege,
       adresse: adresse,
@@ -111,6 +114,18 @@ function Societe() {
                       <div className="page-body">
                         <div className="card p-3">
                           <div className="d-flex justify-content-between align-items-center mb-3">
+                            <div className="mb-3">
+                              <input
+                                type="text"
+                                className="form-control"
+                                placeholder="🔍 Filtrer par nom de société..."
+                                value={searchKeyword}
+                                onChange={(e) => {
+                                  setSearchKeyword(e.target.value);
+                                  searchSociete(e.target.value); // lancement filtre automatique
+                                }}
+                              />
+                            </div>
                             <h5>Liste des Sociétés</h5>
                             <button
                               className="btn btn-primary btn-sm"
@@ -138,7 +153,7 @@ function Societe() {
                                         }}
                                       />
                                     )}
-                                    <h5>{s.nom_societe}</h5>
+                                    <h5>{s.nomSociete}</h5>
                                     <p className="text-muted small mb-1">
                                       {s.siege} - {s.adresse}
                                     </p>
@@ -187,6 +202,34 @@ function Societe() {
                               </div>
                             ))}
                           </div>
+                          <div className="d-flex justify-content-center mt-4">
+                            <nav>
+                              <ul className="pagination">
+                                {Array.from({ length: totalPages }, (_, idx) => (
+                                  <li
+                                    key={idx}
+                                    className={`page-item ${idx === currentPage ? "active" : ""}`}
+                                    style={{ cursor: "pointer" }}
+                                  >
+                                    <a
+                                      className="page-link"
+                                      onClick={() => {
+                                        if (searchKeyword.trim() !== "") {
+                                          searchSociete(searchKeyword, idx);
+                                        } else {
+                                          fetchSociete(idx);
+                                        }
+                                      }}
+
+                                    >
+                                      {idx + 1}
+                                    </a>
+                                  </li>
+                                ))}
+                              </ul>
+                            </nav>
+                          </div>
+
                         </div>
                       </div>
                     </div>
@@ -201,142 +244,129 @@ function Societe() {
 
       {/* Modal de modification */}
       {showModal && (
-        <div
-          className="modal show d-block"
-          tabIndex="-1"
-          role="dialog"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-        >
-          <div className="modal-dialog modal-lg" role="document">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Modifier Société</h5>
-                <button type="button" className="close" onClick={closeModal}>
-                  <span>&times;</span>
-                </button>
+        <div className="modal fade show d-block" tabIndex="-1" role="dialog" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
+          <div className="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div className="modal-content border-0 shadow rounded-3">
+              <div className="modal-header bg-primary text-white">
+                <h5 className="modal-title">
+                  <i className="icofont icofont-edit"></i> Modifier Société
+                </h5>
+                <button type="button" className="btn-close btn-close-white" onClick={closeModal}></button>
               </div>
-              <div className="modal-body">
+              <div
+                className="modal-body"
+                style={{
+                  maxHeight: "70vh",
+                  overflowY: "auto",
+                  paddingRight: "10px",
+                }}
+              >
                 {successMessage && (
-                  <div className="alert alert-success" role="alert">
-                    {successMessage}
-                  </div>
+                  <div className="alert alert-success text-center">{successMessage}</div>
                 )}
-                <div className="row">
-                  <div className="col-md-6 form-group">
+                <div className="row g-3">
+                  <div className="col-md-6">
                     <label>Nom société</label>
                     <input type="text" className="form-control" value={nomSociete} onChange={(e) => setNomSociete(e.target.value)} />
                   </div>
-                  <div className="col-md-6 form-group">
+                  <div className="col-md-6">
                     <label>Logo</label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="form-control"
-                      onChange={handleFileChangeUpdate}
-                    />
+                    <input type="file" accept="image/*" className="form-control" onChange={handleFileChangeUpdate} />
                     {logo && (
-                      <div className="mt-2">
-                        <img
-                          src={`http://localhost:8080/api/societe/logo/${logo}`}
-                          alt="Logo actuel"
-                          style={{ width: "100px", height: "100px", objectFit: "cover" }}
-                        />
-                        <p className="text-muted small mb-0">{logo}</p>
+                      <div className="mt-2 text-center">
+                        <img src={`http://localhost:8080/api/societe/logo/${logo}`} alt="Logo actuel"
+                          style={{ width: "80px", height: "80px", objectFit: "cover", borderRadius: "8px", border: "2px solid #007bff" }} />
+                        <p className="small text-muted mt-1">{logo}</p>
                       </div>
                     )}
                   </div>
 
-                  <div className="col-md-6 form-group">
+                  <div className="col-md-6">
                     <label>Siège</label>
                     <input type="text" className="form-control" value={siege} onChange={(e) => setSiege(e.target.value)} />
                   </div>
-                  <div className="col-md-6 form-group">
+                  <div className="col-md-6">
                     <label>Adresse</label>
                     <input type="text" className="form-control" value={adresse} onChange={(e) => setAdresse(e.target.value)} />
                   </div>
-                  <div className="col-md-6 form-group">
+                  <div className="col-md-6">
                     <label>Téléphone</label>
                     <input type="text" className="form-control" value={telephone} onChange={(e) => setTelephone(e.target.value)} />
                   </div>
-                  <div className="col-md-6 form-group">
+                  <div className="col-md-6">
                     <label>Numéro Fax</label>
                     <input type="text" className="form-control" value={numeroFax} onChange={(e) => setNumeroFax(e.target.value)} />
                   </div>
-                  <div className="col-md-6 form-group">
+                  <div className="col-md-6">
                     <label>Numéro CNAPS</label>
                     <input type="text" className="form-control" value={numeroCnaps} onChange={(e) => setNumeroCnaps(e.target.value)} />
                   </div>
-                  <div className="col-md-6 form-group">
+                  <div className="col-md-6">
                     <label>Numéro Banque</label>
                     <input type="text" className="form-control" value={numeroBanque} onChange={(e) => setNumeroBanque(e.target.value)} />
                   </div>
-                  <div className="col-md-6 form-group">
+                  <div className="col-md-6">
                     <label>Nom Banque</label>
                     <input type="text" className="form-control" value={nomBanque} onChange={(e) => setNomBanque(e.target.value)} />
                   </div>
-                  <div className="col-md-6 form-group">
+                  <div className="col-md-6">
                     <label>Adresse Banque</label>
                     <input type="text" className="form-control" value={adresseBanque} onChange={(e) => setAdresseBanque(e.target.value)} />
                   </div>
-                  <div className="col-md-6 form-group">
+                  <div className="col-md-6">
                     <label>Code Postal Banque</label>
                     <input type="number" className="form-control" value={cpBanque} onChange={(e) => setCpBanque(e.target.value)} />
                   </div>
-                  <div className="col-md-6 form-group">
+                  <div className="col-md-6">
                     <label>Ville Banque</label>
                     <input type="text" className="form-control" value={villeBanque} onChange={(e) => setVilleBanque(e.target.value)} />
                   </div>
                 </div>
               </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary rounded-pill" onClick={closeModal}>
+                  <i className="icofont icofont-close"></i> Annuler
+                </button>
+                <button className="btn btn-primary rounded-pill" onClick={handleUpdate}>
+                  <i className="icofont icofont-save"></i> Enregistrer
+                </button>
               </div>
             </div>
           </div>
+        </div>
       )}
 
       {/* Modal de suppression */}
       {showDeleteModal && (
-        <div
-          className="modal show d-block"
-          tabIndex="-1"
-          role="dialog"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-        >
-          <div className="modal-dialog" role="document">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title text-danger">
-                  Confirmer la suppression
+        <div className="modal fade show d-block" tabIndex="-1" role="dialog" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
+          <div className="modal-dialog modal-dialog-centered" role="document">
+            <div className="modal-content border-0 shadow rounded-3">
+              <div className="modal-header bg-danger text-white">
+                <h5 className="modal-title">
+                  <i className="icofont icofont-warning-alt"></i> Confirmer la suppression
                 </h5>
-                <button
-                  type="button"
-                  className="close"
-                  onClick={() => setShowDeleteModal(false)}
-                >
-                  <span>&times;</span>
-                </button>
+                <button type="button" className="btn-close btn-close-white" onClick={() => setShowDeleteModal(false)}></button>
               </div>
-              <div className="modal-body">
-                <p>
-                  Êtes-vous sûr de vouloir supprimer{" "}
-                  <strong>{societeToDelete?.nom_societe}</strong> ?
+              <div className="modal-body text-center">
+                <p className="fs-5">
+                  Voulez-vous vraiment supprimer la société :
+                  <br />
+                  <strong>{societeToDelete?.nomSociete}</strong> ?
                 </p>
               </div>
-              <div className="modal-footer">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setShowDeleteModal(false)}
-                >
-                  Annuler
+              <div className="modal-footer justify-content-center">
+                <button className="btn btn-secondary rounded-pill" onClick={() => setShowDeleteModal(false)}>
+                  <i className="icofont icofont-close"></i> Annuler
                 </button>
                 <button
-                  className="btn btn-danger"
+                  className="btn btn-danger rounded-pill"
                   onClick={() => {
                     deleteSociete(societeToDelete.id);
                     setShowDeleteModal(false);
                     setSocieteToDelete(null);
                   }}
                 >
-                  Supprimer
+                  <i className="icofont icofont-trash"></i> Supprimer
                 </button>
               </div>
             </div>

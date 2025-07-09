@@ -14,7 +14,7 @@ class SocieteServices {
     return axios.put(ApiUrl + `/societe/${id}`, data, header());
   }
 
- getOne(id) {
+  getOne(id) {
     return axios.get(ApiUrl + `/societe/${id}`, header());
   }
 
@@ -26,7 +26,20 @@ class SocieteServices {
     const formData = new FormData();
     formData.append("file", file);
     return axios.post(ApiUrl + "/societe/upload-logo", formData, header("image"));
-}
+  }
+
+  getAllPaginated(page = 0, size = 6) {
+    return axios.get(`${ApiUrl}/societe?page=${page}&size=${size}`, header());
+  }
+
+  search(keyword, page = 0, size = 6) {
+    return axios.get(`${ApiUrl}/societe/search`, {
+      params: { keyword, page, size },
+      ...header()
+    });
+  }
+
+
 
 
 }

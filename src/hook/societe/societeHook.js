@@ -1,20 +1,25 @@
 import { useEffect, useState } from "react";
 import SocieteServices from "../../services/societe/societeService";
 
-function useProduit() {
+function useSociete() {
   const [societe, setSociete] = useState([]);
+  const [totalPages, setTotalPages] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0);
 
-  function fetchSociete() {
-    SocieteServices.getAll()
-      .then((res) => {
-        if (Array.isArray(res.data)) {
-          setSociete(res.data);
+  const fetchSociete = (page = 0, size = 6) => {
+    SocieteServices.getAllPaginated(page, size)
+      .then(res => {
+        console.log("societe",res);  
+        if (res.data && res.data.content) {
+          setSociete(res.data.content);
+          setTotalPages(res.data.totalPages);
+          setCurrentPage(res.data.number);
         } else {
-          console.error("La réponse de l'API n'est pas un tableau.");
+          console.error("Réponse invalide du backend.");
         }
       })
-      .catch((err) => console.error("Erreur API :", err));
-  }
+      .catch(err => console.error(err));
+  };
 
   useEffect(() => {
     fetchSociete();
@@ -23,7 +28,7 @@ function useProduit() {
   const createSociete = (data, callback = () => { }) => {
     SocieteServices.create(data)
       .then(() => {
-        fetchSociete();
+        fetchSociete(currentPage);
         callback();
       })
       .catch((err) => console.error(err));
@@ -32,7 +37,7 @@ function useProduit() {
   const updateSociete = (id, data, callback = () => { }) => {
     SocieteServices.update(id, data)
       .then(() => {
-        fetchSociete();
+        fetchSociete(currentPage);
         callback();
       })
       .catch((err) => console.error(err));
@@ -41,14 +46,29 @@ function useProduit() {
   const deleteSociete = (id, callback = () => { }) => {
     SocieteServices.delete(id)
       .then(() => {
-        fetchSociete();
+        fetchSociete(currentPage);
         callback();
       })
       .catch((err) => console.error(err));
   };
 
+  const searchSociete = (keyword, page = 0, size = 6) => {
+    SocieteServices.search(keyword, page, size)
+      .then(res => {
+        if (res.data && res.data.content) {
+          setSociete(res.data.content);
+          setTotalPages(res.data.totalPages);
+          setCurrentPage(res.data.number);
+        } else {
+          console.error("Réponse invalide du backend (search).");
+        }
+      })
+      .catch(err => console.error(err));
+  };
 
-  return { societe, createSociete, updateSociete, deleteSociete };
+
+  return { societe, createSociete, updateSociete, deleteSociete, fetchSociete, totalPages, currentPage, setCurrentPage, searchSociete };
 }
 
-export default useProduit;
+export default useSociete;
+
