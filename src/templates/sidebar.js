@@ -73,6 +73,42 @@ function Sidebar() {
               <span className="pcoded-mcaret"></span>
             </Link>
           </li>
+          <li className="active">
+            <Link to="/departement">
+              <span className="pcoded-micon">
+                <i className="ti-home"></i>
+                <b>D</b>
+              </span>
+              <span className="pcoded-mtext" data-i18n="nav.dash.main">
+                Département
+              </span>
+              <span className="pcoded-mcaret"></span>
+            </Link>
+          </li>
+          <li className="active">
+            <Link to="/service">
+              <span className="pcoded-micon">
+                <i className="ti-home"></i>
+                <b>D</b>
+              </span>
+              <span className="pcoded-mtext" data-i18n="nav.dash.main">
+                Services
+              </span>
+              <span className="pcoded-mcaret"></span>
+            </Link>
+          </li>
+          <li className="active">
+            <Link to="/poste">
+              <span className="pcoded-micon">
+                <i className="ti-home"></i>
+                <b>D</b>
+              </span>
+              <span className="pcoded-mtext" data-i18n="nav.dash.main">
+                Poste
+              </span>
+              <span className="pcoded-mcaret"></span>
+            </Link>
+          </li>
 
           <li className="pcoded-hasmenu">
             <a href="javascript:void(0)">

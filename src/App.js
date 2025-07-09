@@ -3,9 +3,12 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import HomePage from "./pages/auth/HomePage";
 import HomePages from "./pages/auth/HomePages";
-import Login from "./pages/auth/Login"
-import Societe from "./pages/societe/societe"
-import CreateSociete from "./pages/societe/createSociete"
+import Login from "./pages/auth/Login";
+import Societe from "./pages/societe/societe";
+import CreateSociete from "./pages/societe/createSociete";
+import Departement from "./pages/departement/departement";
+import Service from "./pages/service/service";
+import Poste from "./pages/poste/poste";
 
 function App() {
   return (
@@ -20,6 +23,15 @@ function App() {
           {/* Routes des societe*/}
           <Route path="/societe" element={<Societe />} />
           <Route path="/create-societe" element={<CreateSociete />} />
+
+          {/* Routes des departement*/}
+          <Route path="/departement" element={<Departement />} />
+
+          {/* Routes des service*/}
+          <Route path="/service" element={<Service />} />
+
+          {/* Routes des poste*/}
+          <Route path="/poste" element={<Poste />} />
         </Routes>
       </AuthProvider>
     </Router>
