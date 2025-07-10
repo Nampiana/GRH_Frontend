@@ -150,6 +150,7 @@ function CreateSociete() {
                                 name="siege"
                                 value={formData.siege}
                                 onChange={handleChange}
+                                required
                               />
                             </div>
 
@@ -162,6 +163,7 @@ function CreateSociete() {
                                 name="adresse"
                                 value={formData.adresse}
                                 onChange={handleChange}
+                                required
                               />
                             </div>
 
@@ -174,6 +176,7 @@ function CreateSociete() {
                                 name="telephone"
                                 value={formData.telephone}
                                 onChange={handleChange}
+                                required
                               />
                             </div>
 
@@ -186,6 +189,7 @@ function CreateSociete() {
                                 name="numero_fax"
                                 value={formData.numero_fax}
                                 onChange={handleChange}
+                                required
                               />
                             </div>
 
@@ -198,6 +202,7 @@ function CreateSociete() {
                                 name="numero_cnaps"
                                 value={formData.numero_cnaps}
                                 onChange={handleChange}
+                                required
                               />
                             </div>
 
@@ -210,6 +215,7 @@ function CreateSociete() {
                                 name="numero_banque"
                                 value={formData.numero_banque}
                                 onChange={handleChange}
+                                required
                               />
                             </div>
 
@@ -222,6 +228,7 @@ function CreateSociete() {
                                 name="nom_banque"
                                 value={formData.nom_banque}
                                 onChange={handleChange}
+                                required
                               />
                             </div>
 
@@ -234,6 +241,7 @@ function CreateSociete() {
                                 name="adresse_banque"
                                 value={formData.adresse_banque}
                                 onChange={handleChange}
+                                required
                               />
                             </div>
 
@@ -246,6 +254,7 @@ function CreateSociete() {
                                 name="cp_banque"
                                 value={formData.cp_banque}
                                 onChange={handleChange}
+                                required
                               />
                             </div>
 
@@ -258,6 +267,7 @@ function CreateSociete() {
                                 name="ville_banque"
                                 value={formData.ville_banque}
                                 onChange={handleChange}
+                                required
                               />
                             </div>
                           </div>

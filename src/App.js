@@ -9,6 +9,7 @@ import CreateSociete from "./pages/societe/createSociete";
 import Departement from "./pages/departement/departement";
 import Service from "./pages/service/service";
 import Poste from "./pages/poste/poste";
+import Categorie from "./pages/categorie/Categorie";
 
 function App() {
   return (
@@ -32,6 +33,9 @@ function App() {
 
           {/* Routes des poste*/}
           <Route path="/poste" element={<Poste />} />
+
+          {/* Routes des categorie*/}
+          <Route path="/categorie" element={<Categorie />} />
         </Routes>
       </AuthProvider>
     </Router>

@@ -109,6 +109,18 @@ function Sidebar() {
               <span className="pcoded-mcaret"></span>
             </Link>
           </li>
+          <li className="active">
+            <Link to="/categorie">
+              <span className="pcoded-micon">
+                <i className="ti-home"></i>
+                <b>D</b>
+              </span>
+              <span className="pcoded-mtext" data-i18n="nav.dash.main">
+                Categorie
+              </span>
+              <span className="pcoded-mcaret"></span>
+            </Link>
+          </li>
 
           <li className="pcoded-hasmenu">
             <a href="javascript:void(0)">
