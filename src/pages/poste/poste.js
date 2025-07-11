@@ -1,32 +1,32 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "../../templates/sidebar";
 import Topbar from "../../templates/topbar";
 import usePoste from "../../hook/poste/usePoste";
-import ServiceServices from "../../services/services/service";
+import SocieteServices from "../../services/societe/societeService";
 import useTemplateScripts from "../../utils/useTemplateScripts";
 
 function Poste() {
   useTemplateScripts();
   const { postes, createPoste, updatePoste, deletePoste } = usePoste();
-  const [services, setServices] = useState([]);
 
+  const [societes, setSocietes] = useState([]);
   const [nomPoste, setNomPoste] = useState("");
-  const [idService, setIdService] = useState("");
+  const [idSociete, setIdSociete] = useState("");
   const [selectedPoste, setSelectedPoste] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
-    ServiceServices.getAll()
-      .then((res) => setServices(res.data))
+    SocieteServices.getAllPaginated(0, 100)
+      .then((res) => {
+        const data = res.data.content || res.data;
+        setSocietes(data);
+      })
       .catch((err) => console.error(err));
   }, []);
 
   const handleCreateOrUpdate = () => {
-    const payload = {
-      nomPoste,
-      idService,
-    };
+    const payload = { nomPoste, idSociete };
 
     if (selectedPoste) {
       updatePoste(selectedPoste.id, payload, () => {
@@ -43,14 +43,14 @@ function Poste() {
 
   const resetForm = () => {
     setNomPoste("");
-    setIdService("");
+    setIdSociete("");
     setSelectedPoste(null);
   };
 
   const handleEdit = (poste) => {
     setSelectedPoste(poste);
     setNomPoste(poste.nomPoste);
-    setIdService(poste.idService);
+    setIdSociete(poste.idSociete);
     setShowModal(true);
   };
 
@@ -80,7 +80,10 @@ function Poste() {
                     <div className="card p-3">
                       <div className="d-flex justify-content-between align-items-center mb-3">
                         <h5>Liste des Postes</h5>
-                        <button className="btn btn-primary btn-sm" onClick={() => setShowModal(true)}>
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => setShowModal(true)}
+                        >
                           <i className="icofont icofont-plus"></i> Créer Poste
                         </button>
                       </div>
@@ -94,7 +97,7 @@ function Poste() {
                               <tr>
                                 <th>#</th>
                                 <th>Nom Poste</th>
-                                <th>Service</th>
+                                <th>Société</th>
                                 <th>Actions</th>
                               </tr>
                             </thead>
@@ -103,7 +106,10 @@ function Poste() {
                                 <tr key={p.id}>
                                   <td>{index + 1}</td>
                                   <td>{p.nomPoste}</td>
-                                  <td>{services.find((s) => s.id === p.idService)?.nomService || "N/A"}</td>
+                                  <td>
+                                    {societes.find((s) => s.id === p.idSociete)?.nomSociete ||
+                                      "N/A"}
+                                  </td>
                                   <td>
                                     <button
                                       className="btn btn-warning btn-sm me-2"
@@ -130,14 +136,21 @@ function Poste() {
               </div>
 
               {showModal && (
-                <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+                <div
+                  className="modal fade show d-block"
+                  style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+                >
                   <div className="modal-dialog modal-dialog-centered">
                     <div className="modal-content border-0 shadow rounded-3">
                       <div className="modal-header bg-primary text-white">
                         <h5 className="modal-title">
                           {selectedPoste ? "Modifier Poste" : "Créer Poste"}
                         </h5>
-                        <button type="button" className="btn-close btn-close-white" onClick={() => setShowModal(false)}></button>
+                        <button
+                          type="button"
+                          className="btn-close btn-close-white"
+                          onClick={() => setShowModal(false)}
+                        ></button>
                       </div>
                       <div className="modal-body">
                         <label>Nom du Poste</label>
@@ -148,28 +161,31 @@ function Poste() {
                           onChange={(e) => setNomPoste(e.target.value)}
                           placeholder="Nom du poste"
                         />
-                        <label>Service</label>
+                        <label>Société</label>
                         <select
-                          className="form-control"
-                          value={idService}
-                          onChange={(e) => setIdService(e.target.value)}
+                          className="form-control mb-2"
+                          value={idSociete}
+                          onChange={(e) => setIdSociete(e.target.value)}
                         >
-                          <option value="">Sélectionner un service</option>
-                          {services.map((s) => (
+                          <option value="">Sélectionner une société</option>
+                          {societes.map((s) => (
                             <option key={s.id} value={s.id}>
-                              {s.nomService}
+                              {s.nomSociete}
                             </option>
                           ))}
                         </select>
                       </div>
                       <div className="modal-footer">
-                        <button className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => setShowModal(false)}
+                        >
                           Annuler
                         </button>
                         <button
                           className="btn btn-primary"
                           onClick={handleCreateOrUpdate}
-                          disabled={!nomPoste || !idService}
+                          disabled={!nomPoste.trim() || !idSociete}
                         >
                           {selectedPoste ? "Enregistrer" : "Créer"}
                         </button>
@@ -180,18 +196,30 @@ function Poste() {
               )}
 
               {showDeleteModal && (
-                <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+                <div
+                  className="modal fade show d-block"
+                  style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+                >
                   <div className="modal-dialog modal-dialog-centered">
                     <div className="modal-content border-0 shadow rounded-3">
                       <div className="modal-header bg-danger text-white">
                         <h5 className="modal-title">Confirmer la suppression</h5>
-                        <button type="button" className="btn-close btn-close-white" onClick={() => setShowDeleteModal(false)}></button>
+                        <button
+                          type="button"
+                          className="btn-close btn-close-white"
+                          onClick={() => setShowDeleteModal(false)}
+                        ></button>
                       </div>
                       <div className="modal-body text-center">
-                        Voulez-vous supprimer le poste <strong>{selectedPoste?.nomPoste}</strong> ?
+                        Voulez-vous supprimer le poste :
+                        <br />
+                        <strong>{selectedPoste?.nomPoste}</strong> ?
                       </div>
                       <div className="modal-footer justify-content-center">
-                        <button className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => setShowDeleteModal(false)}
+                        >
                           Annuler
                         </button>
                         <button className="btn btn-danger" onClick={confirmDelete}>
@@ -202,7 +230,6 @@ function Poste() {
                   </div>
                 </div>
               )}
-
             </div>
           </div>
         </div>

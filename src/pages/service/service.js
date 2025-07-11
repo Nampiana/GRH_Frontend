@@ -3,15 +3,19 @@ import Sidebar from "../../templates/sidebar";
 import Topbar from "../../templates/topbar";
 import useService from "../../hook/service/useService";
 import DepartementServices from "../../services/departement/departement";
+import SocieteServices from "../../services/societe/societeService";
 import useTemplateScripts from "../../utils/useTemplateScripts";
 
 function Service() {
   useTemplateScripts();
   const { services, createService, updateService, deleteService } = useService();
+
   const [departements, setDepartements] = useState([]);
+  const [societes, setSocietes] = useState([]);
 
   const [nomService, setNomService] = useState("");
   const [idDepartement, setIdDepartement] = useState("");
+  const [idSociete, setIdSociete] = useState("");
   const [selectedService, setSelectedService] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -20,12 +24,20 @@ function Service() {
     DepartementServices.getAll()
       .then((res) => setDepartements(res.data))
       .catch((err) => console.error(err));
+
+    SocieteServices.getAll()
+      .then((res) => {
+        console.log("Societe loaded:", res.data);
+        setSocietes(res.data.content || res.data);
+      })
+      .catch((err) => console.error(err));
   }, []);
 
   const handleCreateOrUpdate = () => {
     const payload = {
       nomService,
       idDepartement,
+      idSociete,
     };
 
     if (selectedService) {
@@ -44,6 +56,7 @@ function Service() {
   const resetForm = () => {
     setNomService("");
     setIdDepartement("");
+    setIdSociete("");
     setSelectedService(null);
   };
 
@@ -51,6 +64,7 @@ function Service() {
     setSelectedService(service);
     setNomService(service.nomService);
     setIdDepartement(service.idDepartement);
+    setIdSociete(service.idSociete);
     setShowModal(true);
   };
 
@@ -80,7 +94,10 @@ function Service() {
                     <div className="card p-3">
                       <div className="d-flex justify-content-between align-items-center mb-3">
                         <h5>Liste des Services</h5>
-                        <button className="btn btn-primary btn-sm" onClick={() => setShowModal(true)}>
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => setShowModal(true)}
+                        >
                           <i className="icofont icofont-plus"></i> Créer Service
                         </button>
                       </div>
@@ -95,6 +112,7 @@ function Service() {
                                 <th>#</th>
                                 <th>Nom Service</th>
                                 <th>Département</th>
+                                <th>Société</th>
                                 <th>Actions</th>
                               </tr>
                             </thead>
@@ -104,6 +122,7 @@ function Service() {
                                   <td>{index + 1}</td>
                                   <td>{s.nomService}</td>
                                   <td>{departements.find((d) => d.id === s.idDepartement)?.nomDepartement || "N/A"}</td>
+                                  <td>{societes.find((soc) => soc.id === s.idSociete)?.nomSociete || "N/A"}</td>
                                   <td>
                                     <button
                                       className="btn btn-warning btn-sm me-2"
@@ -150,7 +169,7 @@ function Service() {
                         />
                         <label>Département</label>
                         <select
-                          className="form-control"
+                          className="form-control mb-2"
                           value={idDepartement}
                           onChange={(e) => setIdDepartement(e.target.value)}
                         >
@@ -158,6 +177,19 @@ function Service() {
                           {departements.map((d) => (
                             <option key={d.id} value={d.id}>
                               {d.nomDepartement}
+                            </option>
+                          ))}
+                        </select>
+                        <label>Société</label>
+                        <select
+                          className="form-control"
+                          value={idSociete}
+                          onChange={(e) => setIdSociete(e.target.value)}
+                        >
+                          <option value="">Sélectionner une société</option>
+                          {societes.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.nomSociete}
                             </option>
                           ))}
                         </select>
@@ -169,7 +201,7 @@ function Service() {
                         <button
                           className="btn btn-primary"
                           onClick={handleCreateOrUpdate}
-                          disabled={!nomService || !idDepartement}
+                          disabled={!nomService || !idDepartement || !idSociete}
                         >
                           {selectedService ? "Enregistrer" : "Créer"}
                         </button>

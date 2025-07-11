@@ -35,7 +35,9 @@ function Topbar() {
             <Link to="/societe">
               <img className="img-fluid" src="assets/images/logo.png" alt="Theme-Logo" />
             </Link>
-           
+            <a className="mobile-options">
+              <i className="ti-more"></i>
+            </a>
           </div>
 
           <div className="navbar-container container-fluid">

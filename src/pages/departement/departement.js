@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "../../templates/sidebar";
 import Topbar from "../../templates/topbar";
 import useDepartement from "../../hook/departement/departementHook";
+import SocieteServices from "../../services/societe/societeService";
 import useTemplateScripts from "../../utils/useTemplateScripts";
 
 function Departement() {
@@ -14,26 +15,36 @@ function Departement() {
         deleteDepartement,
     } = useDepartement();
 
+    const [societes, setSocietes] = useState([]);
     const [nomDepartement, setNomDepartement] = useState("");
+    const [idSociete, setIdSociete] = useState("");
     const [selectedDepartement, setSelectedDepartement] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     useEffect(() => {
         fetchDepartements();
+        SocieteServices.getAll()
+            .then(res => {
+                console.log("Societe response:", res.data);
+                setSocietes(res.data.content);
+            })
+            .catch(err => console.error(err));
     }, []);
 
+
     const handleCreateOrUpdate = () => {
+        const payload = { nomDepartement, idSociete };
+
         if (selectedDepartement) {
-            updateDepartement(selectedDepartement.id, { nomDepartement }, () => {
+            updateDepartement(selectedDepartement.id, payload, () => {
                 setShowModal(false);
-                setSelectedDepartement(null);
-                setNomDepartement("");
+                resetForm();
             });
         } else {
-            createDepartement({ nomDepartement }, () => {
+            createDepartement(payload, () => {
                 setShowModal(false);
-                setNomDepartement("");
+                resetForm();
             });
         }
     };
@@ -41,6 +52,7 @@ function Departement() {
     const handleEditClick = (departement) => {
         setSelectedDepartement(departement);
         setNomDepartement(departement.nomDepartement);
+        setIdSociete(departement.idSociete || "");
         setShowModal(true);
     };
 
@@ -56,10 +68,15 @@ function Departement() {
         });
     };
 
-    const closeModal = () => {
-        setShowModal(false);
+    const resetForm = () => {
         setNomDepartement("");
+        setIdSociete("");
         setSelectedDepartement(null);
+    };
+
+    const closeModal = () => {
+        resetForm();
+        setShowModal(false);
     };
 
     return (
@@ -94,6 +111,7 @@ function Departement() {
                                                                 <tr>
                                                                     <th>#</th>
                                                                     <th>Nom du Département</th>
+                                                                    <th>Société</th>
                                                                     <th>Actions</th>
                                                                 </tr>
                                                             </thead>
@@ -102,6 +120,7 @@ function Departement() {
                                                                     <tr key={d.id}>
                                                                         <td>{index + 1}</td>
                                                                         <td>{d.nomDepartement}</td>
+                                                                        <td>{societes.find(s => s.id === d.idSociete)?.nomSociete || "N/A"}</td>
                                                                         <td>
                                                                             <button
                                                                                 className="btn btn-warning btn-sm me-3"
@@ -157,11 +176,22 @@ function Departement() {
                                 <label>Nom du Département</label>
                                 <input
                                     type="text"
-                                    className="form-control"
+                                    className="form-control mb-2"
                                     placeholder="Nom du département"
                                     value={nomDepartement}
                                     onChange={(e) => setNomDepartement(e.target.value)}
                                 />
+                                <label>Société</label>
+                                <select
+                                    className="form-control"
+                                    value={idSociete}
+                                    onChange={(e) => setIdSociete(e.target.value)}
+                                >
+                                    <option value="">Sélectionner une société</option>
+                                    {societes.map(s => (
+                                        <option key={s.id} value={s.id}>{s.nomSociete}</option>
+                                    ))}
+                                </select>
                             </div>
                             <div className="modal-footer">
                                 <button className="btn btn-secondary" onClick={closeModal}>
@@ -170,7 +200,7 @@ function Departement() {
                                 <button
                                     className="btn btn-primary"
                                     onClick={handleCreateOrUpdate}
-                                    disabled={nomDepartement.trim() === ""}
+                                    disabled={nomDepartement.trim() === "" || idSociete === ""}
                                 >
                                     {selectedDepartement ? "Enregistrer les modifications" : "Créer"}
                                 </button>

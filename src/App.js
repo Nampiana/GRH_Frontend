@@ -10,6 +10,7 @@ import Departement from "./pages/departement/departement";
 import Service from "./pages/service/service";
 import Poste from "./pages/poste/poste";
 import Categorie from "./pages/categorie/Categorie";
+import EmployerSociete from "./pages/employerSociete/EmployerSociete";
 
 function App() {
   return (
@@ -36,6 +37,9 @@ function App() {
 
           {/* Routes des categorie*/}
           <Route path="/categorie" element={<Categorie />} />
+
+          {/* Routes des employer societe*/}
+          <Route path="/employerSociete" element={<EmployerSociete />} />
         </Routes>
       </AuthProvider>
     </Router>
