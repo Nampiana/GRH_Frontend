@@ -10,12 +10,12 @@ class EmployerSocieteService {
     return axios.post(ApiUrl + "/employer-societe", data, header());
   }
 
-  update(id, data) {
-    return axios.put(ApiUrl + `/employer-societe/${id}`, data, header());
+  updateComplete(id, data) {
+    return axios.put(ApiUrl + `/employer-societe/update-complete/${id}`, data, header());
   }
 
-  delete(id) {
-    return axios.delete(ApiUrl + `/employer-societe/${id}`, header());
+  deleteComplete(id) {
+    return axios.delete(ApiUrl + `/employer-societe/delete-complete/${id}`, header());
   }
 }
 

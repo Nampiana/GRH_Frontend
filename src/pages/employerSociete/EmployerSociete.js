@@ -110,6 +110,7 @@ function EmployerSociete() {
     });
   };
 
+
   const resetForm = () => {
     setFormData({
       nom: "",

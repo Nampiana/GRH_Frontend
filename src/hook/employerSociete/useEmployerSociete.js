@@ -20,7 +20,7 @@ function useEmployerSociete() {
   };
 
   const updateEmployer = (id, data, callback = () => {}) => {
-    EmployerSocieteService.update(id, data)
+    EmployerSocieteService.updateComplete(id, data)
       .then(() => {
         fetchEmployers();
         callback();
@@ -29,7 +29,7 @@ function useEmployerSociete() {
   };
 
   const deleteEmployer = (id, callback = () => {}) => {
-    EmployerSocieteService.delete(id)
+    EmployerSocieteService.deleteComplete(id)
       .then(() => {
         fetchEmployers();
         callback();
