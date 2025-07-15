@@ -18,26 +18,33 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(true);
     try {
       const res = await AuthServices.login(credentials);
-      console.log(res);
-  
+      console.log("tssssss", res);
+
       const userData = {
         username: res.data.nom,
-        email: res.data.email
+        email: res.data.email,
+        societe: res.data.idSociete,
+        roles: res.data.roles
       };
-  
+
       setUser(userData);
       setIsLogged(true);
       localStorage.setItem('access_token', res.data.token);
       localStorage.setItem('user', JSON.stringify(userData));
-  
+
       console.log("user", userData);
-  
+
       // Redirection en fonction du rôle
-      if (userData) {
+      if (userData && userData.roles === 1) {
         navigate('/societe');
+      } else if (userData && userData.roles === 2) {
+        navigate('/departement');
+      } else if (userData && userData.roles === 3) {
+        navigate('/departement');
       } else {
         navigate('/');
       }
+
     } catch (err) {
       console.error('Erreur de connexion :', err.response?.data?.error);
       setAlertMessage({ type: "danger", text: err.response?.data?.error || "Erreur de connexion !" });
@@ -50,7 +57,7 @@ export const AuthProvider = ({ children }) => {
       setIsLoading(false);
     }
   };
-  
+
 
   const logout = () => {
     AuthServices.logout()
@@ -79,13 +86,13 @@ export const AuthProvider = ({ children }) => {
   }, [alertMessage]);
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');    
+    const token = localStorage.getItem('access_token');
     if (token) {
       setIsLogged(true);
       AuthServices.checkToken(token)
         .then((res) => {
           const userData = res.data.user;
-  
+
           if (userData.etat_active === 0) {
             setIsLogged(false);
             setUser(null);
@@ -98,9 +105,9 @@ export const AuthProvider = ({ children }) => {
             navigate('/login'); // Redirige vers la page de connexion
             return;
           }
-  
+
           setUser(userData);
-  
+
           if (userData.role === 1) {
             navigate('/users');
           } else if (userData.role === 2) {
@@ -116,7 +123,7 @@ export const AuthProvider = ({ children }) => {
       navigate('/login');
     }
   }, [navigate]);
-  
+
 
   return (
     <AuthContext.Provider

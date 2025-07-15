@@ -8,7 +8,6 @@ function Login() {
   const { login, isLoading, alertMessage } = useContext(AuthContext);
 
   const handleSubmit = (e) => {
-    console.log("makato");
     
     e.preventDefault();
     setErrorMessage(""); // Réinitialiser le message d'erreur avant la tentative de connexion
