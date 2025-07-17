@@ -19,6 +19,17 @@ function Service() {
   const [selectedService, setSelectedService] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [user, setUser] = useState({ roles: 1, societe: "" });
+  const [selectedSocieteFilter, setSelectedSocieteFilter] = useState("");
+  const [selectedDepartementFilter, setSelectedDepartementFilter] = useState("");
+
+
+  useEffect(() => {
+    const userData = JSON.parse(localStorage.getItem("user"));
+    if (userData) {
+      setUser({ roles: userData.roles, societe: userData.societe });
+    }
+  }, []);
 
   useEffect(() => {
     DepartementServices.getAll()
@@ -101,6 +112,38 @@ function Service() {
                           <i className="icofont icofont-plus"></i> Créer Service
                         </button>
                       </div>
+                      {user.roles === 1 && (
+                        <div className="mb-3">
+                          <label>Filtrer par Société :</label>
+                          <select
+                            className="form-control"
+                            value={selectedSocieteFilter}
+                            onChange={(e) => setSelectedSocieteFilter(e.target.value)}
+                          >
+                            <option value="">Toutes les sociétés</option>
+                            {societes.map(s => (
+                              <option key={s.id} value={s.id}>{s.nomSociete}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <div className="mb-3">
+                        <label>Filtrer par Département :</label>
+                        <select
+                          className="form-control"
+                          value={selectedDepartementFilter}
+                          onChange={(e) => setSelectedDepartementFilter(e.target.value)}
+                        >
+                          <option value="">Tous les départements</option>
+                          {departements
+                            .filter(d => user.roles === 2 ? d.idSociete === user.societe : true)
+                            .map(d => (
+                              <option key={d.id} value={d.id}>{d.nomDepartement}</option>
+                            ))}
+                        </select>
+                      </div>
+
 
                       {services.length === 0 ? (
                         <p className="text-center text-muted">Aucun service enregistré.</p>
@@ -117,29 +160,28 @@ function Service() {
                               </tr>
                             </thead>
                             <tbody>
-                              {services.map((s, index) => (
-                                <tr key={s.id}>
-                                  <td>{index + 1}</td>
-                                  <td>{s.nomService}</td>
-                                  <td>{departements.find((d) => d.id === s.idDepartement)?.nomDepartement || "N/A"}</td>
-                                  <td>{societes.find((soc) => soc.id === s.idSociete)?.nomSociete || "N/A"}</td>
-                                  <td>
-                                    <button
-                                      className="btn btn-warning btn-sm me-2"
-                                      onClick={() => handleEdit(s)}
-                                    >
-                                      Modifier
-                                    </button>
-                                    <button
-                                      className="btn btn-danger btn-sm"
-                                      onClick={() => handleDelete(s)}
-                                    >
-                                      Supprimer
-                                    </button>
-                                  </td>
-                                </tr>
-                              ))}
+                              {services
+                                .filter(s => {
+                                  if (user.roles === 2 && s.idSociete !== user.societe) return false;
+                                  if (user.roles === 1 && selectedSocieteFilter && s.idSociete !== selectedSocieteFilter) return false;
+                                  if (selectedDepartementFilter && s.idDepartement !== selectedDepartementFilter) return false;
+                                  return true;
+                                })
+                                .map((s, index) => (
+                                  <tr key={s.id}>
+                                    <td>{index + 1}</td>
+                                    <td>{s.nomService}</td>
+                                    <td>{departements.find((d) => d.id === s.idDepartement)?.nomDepartement || "N/A"}</td>
+                                    <td>{societes.find((soc) => soc.id === s.idSociete)?.nomSociete || "N/A"}</td>
+                                    <td>
+                                      <button className="btn btn-warning btn-sm me-2" onClick={() => handleEdit(s)}>Modifier</button>
+                                      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(s)}>Supprimer</button>
+                                    </td>
+                                  </tr>
+                                ))}
+
                             </tbody>
+
                           </table>
                         </div>
                       )}
@@ -174,12 +216,16 @@ function Service() {
                           onChange={(e) => setIdDepartement(e.target.value)}
                         >
                           <option value="">Sélectionner un département</option>
-                          {departements.map((d) => (
-                            <option key={d.id} value={d.id}>
-                              {d.nomDepartement}
-                            </option>
-                          ))}
+                          {departements
+                            .filter(d => user.roles === 2 ? d.idSociete === user.societe : true)
+                            .map(d => (
+                              <option key={d.id} value={d.id}>
+                                {d.nomDepartement}
+                              </option>
+                            ))
+                          }
                         </select>
+
                         <label>Société</label>
                         <select
                           className="form-control"
@@ -187,12 +233,16 @@ function Service() {
                           onChange={(e) => setIdSociete(e.target.value)}
                         >
                           <option value="">Sélectionner une société</option>
-                          {societes.map((s) => (
-                            <option key={s.id} value={s.id}>
-                              {s.nomSociete}
-                            </option>
-                          ))}
+                          {societes
+                            .filter(s => user.roles === 2 ? s.id === user.societe : true)
+                            .map(s => (
+                              <option key={s.id} value={s.id}>
+                                {s.nomSociete}
+                              </option>
+                            ))
+                          }
                         </select>
+
                       </div>
                       <div className="modal-footer">
                         <button className="btn btn-secondary" onClick={() => setShowModal(false)}>

@@ -21,6 +21,17 @@ function Departement() {
     const [selectedDepartement, setSelectedDepartement] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [selectedSocieteFilter, setSelectedSocieteFilter] = useState("");
+
+
+    const [user, setUser] = useState({ roles: 1, societe: "" });
+
+    useEffect(() => {
+        const userData = JSON.parse(localStorage.getItem("user"));
+        if (userData) {
+            setUser({ roles: userData.roles, societe: userData.societe });
+        }
+    }, []);
 
     useEffect(() => {
         fetchDepartements();
@@ -101,6 +112,23 @@ function Departement() {
                                                         <i className="icofont icofont-plus"></i> Créer Département
                                                     </button>
                                                 </div>
+                                                {user.roles === 1 && (
+                                                    <div className="mb-3">
+                                                        <label>Filtrer par Société :</label>
+                                                        <select
+                                                            className="form-control"
+                                                            value={selectedSocieteFilter}
+                                                            onChange={(e) => setSelectedSocieteFilter(e.target.value)}
+                                                        >
+                                                            <option value="">Toutes les sociétés</option>
+                                                            {societes.map(s => (
+                                                                <option key={s.id} value={s.id}>
+                                                                    {s.nomSociete}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                )}
 
                                                 {departements.length === 0 ? (
                                                     <p className="text-center text-muted">Aucun département enregistré.</p>
@@ -116,28 +144,31 @@ function Departement() {
                                                                 </tr>
                                                             </thead>
                                                             <tbody>
-                                                                {departements.map((d, index) => (
-                                                                    <tr key={d.id}>
-                                                                        <td>{index + 1}</td>
-                                                                        <td>{d.nomDepartement}</td>
-                                                                        <td>{societes.find(s => s.id === d.idSociete)?.nomSociete || "N/A"}</td>
-                                                                        <td>
-                                                                            <button
-                                                                                className="btn btn-warning btn-sm me-3"
-                                                                                onClick={() => handleEditClick(d)}
-                                                                            >
-                                                                                <i className="icofont icofont-edit"></i> Modifier
-                                                                            </button>
-                                                                            <button
-                                                                                className="btn btn-danger btn-sm"
-                                                                                onClick={() => handleDeleteClick(d)}
-                                                                            >
-                                                                                <i className="icofont icofont-trash"></i> Supprimer
-                                                                            </button>
-                                                                        </td>
-                                                                    </tr>
-                                                                ))}
+                                                                {departements
+                                                                    .filter(d => {
+                                                                        if (user.roles === 2 && d.idSociete !== user.societe) return false;
+                                                                        if (user.roles === 1 && selectedSocieteFilter && d.idSociete !== selectedSocieteFilter) return false;
+                                                                        return true;
+                                                                    })
+
+                                                                    .map((d, index) => (
+                                                                        <tr key={d.id}>
+                                                                            <td>{index + 1}</td>
+                                                                            <td>{d.nomDepartement}</td>
+                                                                            <td>{societes.find(s => s.id === d.idSociete)?.nomSociete || "N/A"}</td>
+                                                                            <td>
+                                                                                <button className="btn btn-warning btn-sm me-3" onClick={() => handleEditClick(d)}>
+                                                                                    <i className="icofont icofont-edit"></i> Modifier
+                                                                                </button>
+                                                                                <button className="btn btn-danger btn-sm" onClick={() => handleDeleteClick(d)}>
+                                                                                    <i className="icofont icofont-trash"></i> Supprimer
+                                                                                </button>
+                                                                            </td>
+                                                                        </tr>
+                                                                    ))
+                                                                }
                                                             </tbody>
+
                                                         </table>
                                                     </div>
                                                 )}
@@ -188,9 +219,14 @@ function Departement() {
                                     onChange={(e) => setIdSociete(e.target.value)}
                                 >
                                     <option value="">Sélectionner une société</option>
-                                    {societes.map(s => (
-                                        <option key={s.id} value={s.id}>{s.nomSociete}</option>
-                                    ))}
+                                    {societes
+                                        .filter(s => user.roles === 2 ? s.id === user.societe : true)
+                                        .map(s => (
+                                            <option key={s.id} value={s.id}>
+                                                {s.nomSociete}
+                                            </option>
+                                        ))
+                                    }
                                 </select>
                             </div>
                             <div className="modal-footer">

@@ -7,7 +7,9 @@ import ServiceServices from "../../services/services/service";
 import IndividuServices from "../../services/individu/individuService";
 import PosteServices from "../../services/poste/posteService";
 import CategorieServices from "../../services/categorie/categorie";
+import utilisateurServices from "../../services/utilisateur/utilisateurService";
 import useTemplateScripts from "../../utils/useTemplateScripts";
+import useUtilisateur from "../../hook/utilisateur/utilisateurHook";
 
 function EmployerSociete() {
   useTemplateScripts();
@@ -15,9 +17,11 @@ function EmployerSociete() {
   const { employers, createEmployer, updateEmployer, deleteEmployer } = useEmployerSociete();
   const [individus, setIndividus] = useState([]);
   const [societes, setSocietes] = useState([]);
+  const [utilisateur, setUtilisateur] = useState([]);
   const [services, setServices] = useState([]);
   const [postes, setPostes] = useState([]);
   const [categories, setCategories] = useState([]);
+  const { updateUtilisateur } = useUtilisateur();
 
   const [formData, setFormData] = useState({
     nom: "",
@@ -55,6 +59,7 @@ function EmployerSociete() {
     ServiceServices.getAll().then(res => setServices(res.data.content || res.data));
     PosteServices.getAll().then(res => setPostes(res.data.content || res.data));
     CategorieServices.getAll().then(res => setCategories(res.data.content || res.data));
+    utilisateurServices.getAll().then(res => setUtilisateur(res.data.content || res.data));
   }, []);
 
   const handleInputChange = e => {
@@ -63,6 +68,8 @@ function EmployerSociete() {
 
   const handleCreateOrUpdate = () => {
     let roleToAssign = formData.role;
+    console.log("roles pr", formData.role);
+
 
     if (!selectedEmployer && user.roles === 1) {
       roleToAssign = 2;
@@ -91,15 +98,30 @@ function EmployerSociete() {
     };
 
     if (selectedEmployer) {
+      console.log("employer", selectedEmployer);
+
       updateEmployer(selectedEmployer.id, payload, () => {
-        IndividuServices.getAll().then(res => setIndividus(res.data.content || res.data));
-        setSuccessMessage("Employé modifié avec succès !");
-        setShowModal(false);
-        resetForm();
+        // 🔵 Mise à jour aussi dans Utilisateur
+        const utilisateurToUpdate = {
+          idIndividu: selectedEmployer.idIndividue,
+          idSociete: formData.idSociete,
+          etat: 1,
+          roles: parseInt(formData.role, 10)
+        };
+        console.log("users", utilisateurToUpdate);
+
+        updateUtilisateur(selectedEmployer.idUtilisateur, utilisateurToUpdate, () => {
+          IndividuServices.getAll().then(res => setIndividus(res.data.content || res.data));
+          utilisateurServices.getAll().then(res => setUtilisateur(res.data.content || res.data));
+          setSuccessMessage("Employé  modifiés avec succès !");
+          setShowModal(false);
+          resetForm();
+        });
       });
     } else {
       createEmployer(createPayload, () => {
         IndividuServices.getAll().then(res => setIndividus(res.data.content || res.data));
+        utilisateurServices.getAll().then(res => setUtilisateur(res.data.content || res.data));
         setSuccessMessage("Employé créé avec succès !");
         setShowModal(false);
         resetForm();
@@ -110,6 +132,7 @@ function EmployerSociete() {
 
   const handleEdit = employer => {
     const individu = individus.find(i => i.id === employer.idIndividue);
+    const userRole = utilisateur.find(u => u.id === employer.idUtilisateur)?.roles || 3;
 
     setSelectedEmployer(employer);
     setFormData({
@@ -123,7 +146,7 @@ function EmployerSociete() {
       idService: employer.idService,
       idPoste: employer.idPoste,
       idCategorie: employer.idCategorie,
-      role: employer.role
+      role: userRole
     });
     setShowModal(true);
   };
@@ -228,6 +251,8 @@ function EmployerSociete() {
                               <th>Catégorie</th>
                               <th>Téléphone</th>
                               <th>Email</th>
+                              <th>Roles</th>
+                              <th>Date d'embauche</th>
                               <th>Actions</th>
                             </tr>
                           </thead>
@@ -256,6 +281,13 @@ function EmployerSociete() {
                                     <td>{categories.find(c => c.id === e.idCategorie)?.nomCategorie || "N/A"}</td>
                                     <td>{individu.telephone || "N/A"}</td>
                                     <td>{individu.email || "N/A"}</td>
+                                    <td>
+                                      {(() => {
+                                        const role = utilisateur.find(u => u.id === e.idUtilisateur)?.roles;
+                                        return role === 2 ? "RH" : role === 3 ? "Employé" : "N/A";
+                                      })()}
+                                    </td>
+                                    <td>{e.dateEmbauche ? new Date(e.dateEmbauche).toLocaleDateString() : "N/A"}</td>
                                     <td>
                                       <button className="btn btn-warning btn-sm me-2" onClick={() => handleEdit(e)}>
                                         Modifier
@@ -339,26 +371,57 @@ function EmployerSociete() {
 
 
 
+
                         <label className="mt-2">Société</label>
-                        <select className="form-control" name="idSociete" value={formData.idSociete} onChange={handleInputChange}>
+                        <select
+                          className="form-control"
+                          name="idSociete"
+                          value={formData.idSociete}
+                          onChange={handleInputChange}
+                        >
                           <option value="">Sélectionner une société</option>
-                          {societes.map(s => (
-                            <option key={s.id} value={s.id}>{s.nomSociete}</option>
-                          ))}
+
+                          {user.roles === 2
+                            ? societes
+                              .filter(s => s.id === user.societe)
+                              .map(s => (
+                                <option key={s.id} value={s.id}>{s.nomSociete}</option>
+                              ))
+                            : societes.map(s => (
+                              <option key={s.id} value={s.id}>{s.nomSociete}</option>
+                            ))
+                          }
                         </select>
 
+
                         <label className="mt-2">Service</label>
-                        <select className="form-control" name="idService" value={formData.idService} onChange={handleInputChange}>
+                        <select
+                          className="form-control"
+                          name="idService"
+                          value={formData.idService}
+                          onChange={handleInputChange}
+                        >
                           <option value="">Sélectionner un service</option>
-                          {services.map(s => (
+                          {(user.roles === 2
+                            ? services.filter(s => s.idSociete === user.societe)
+                            : services
+                          ).map(s => (
                             <option key={s.id} value={s.id}>{s.nomService}</option>
                           ))}
                         </select>
 
                         <label className="mt-2">Poste</label>
-                        <select className="form-control" name="idPoste" value={formData.idPoste} onChange={handleInputChange}>
+                        <select
+                          className="form-control"
+                          name="idPoste"
+                          value={formData.idPoste}
+                          onChange={handleInputChange}
+                        >
                           <option value="">Sélectionner un poste</option>
-                          {postes.map(p => (
+                          {(user.roles === 2
+                            ? postes.filter(p => p.idSociete === user.societe)
+                            : postes
+                          ).map(p => (
                             <option key={p.id} value={p.id}>{p.nomPoste}</option>
                           ))}
                         </select>
