@@ -24,7 +24,8 @@ export const AuthProvider = ({ children }) => {
         username: res.data.nom,
         email: res.data.email,
         societe: res.data.idSociete,
-        roles: res.data.roles
+        roles: res.data.roles,
+        idUtilisateur: res.data.idUtilisateur
       };
 
       setUser(userData);
@@ -40,7 +41,7 @@ export const AuthProvider = ({ children }) => {
       } else if (userData && userData.roles === 2) {
         navigate('/departement');
       } else if (userData && userData.roles === 3) {
-        navigate('/departement');
+        navigate('/conge');
       } else {
         navigate('/');
       }

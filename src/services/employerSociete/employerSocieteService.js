@@ -17,6 +17,10 @@ class EmployerSocieteService {
   deleteComplete(id) {
     return axios.delete(ApiUrl + `/employer-societe/delete-complete/${id}`, header());
   }
+
+  getByUtilisateur(idUtilisateur) {
+    return axios.get(ApiUrl + `/employer-societe/by-utilisateur/${idUtilisateur}`, header());
+  }
 }
 
 export default new EmployerSocieteService();

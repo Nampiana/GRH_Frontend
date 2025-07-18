@@ -11,6 +11,7 @@ import Service from "./pages/service/service";
 import Poste from "./pages/poste/poste";
 import Categorie from "./pages/categorie/Categorie";
 import EmployerSociete from "./pages/employerSociete/EmployerSociete";
+import Conge from "./pages/conge/conge";
 
 function App() {
   return (
@@ -40,6 +41,9 @@ function App() {
 
           {/* Routes des employer societe*/}
           <Route path="/employerSociete" element={<EmployerSociete />} />
+
+          {/* Routes des conge*/}
+          <Route path="/conge" element={<Conge />} />
         </Routes>
       </AuthProvider>
     </Router>

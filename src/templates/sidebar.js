@@ -148,15 +148,27 @@ function Sidebar() {
                   <i className="ti-time me-2" style={{ color: "#dc3545" }}></i> Pointage
                 </Link>
               </li>
+              <li>
+                <Link to="/conge">
+                  <i className="ti-time me-2" style={{ color: "#dc3545" }}></i> Congé
+                </Link>
+              </li>
             </>
           )}
 
           {user.role === 3 && (
-            <li>
-              <Link to="/pointage">
-                <i className="ti-time me-2" style={{ color: "#dc3545" }}></i> Pointage
-              </Link>
-            </li>
+            <>
+              <li>
+                <Link to="/pointage">
+                  <i className="ti-time me-2" style={{ color: "#dc3545" }}></i> Pointage
+                </Link>
+              </li>
+              <li>
+                <Link to="/conge">
+                  <i className="ti-time me-2" style={{ color: "#dc3545" }}></i> Congé
+                </Link>
+              </li>
+            </>
           )}
         </ul>
 

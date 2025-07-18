@@ -3,6 +3,8 @@ import EmployerSocieteService from "../../services/employerSociete/employerSocie
 
 function useEmployerSociete() {
   const [employers, setEmployers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const fetchEmployers = () => {
     EmployerSocieteService.getAll()
@@ -10,7 +12,7 @@ function useEmployerSociete() {
       .catch(err => console.error(err));
   };
 
-  const createEmployer = (data, callback = () => {}) => {
+  const createEmployer = (data, callback = () => { }) => {
     EmployerSocieteService.create(data)
       .then(() => {
         fetchEmployers();
@@ -19,7 +21,7 @@ function useEmployerSociete() {
       .catch(err => console.error(err));
   };
 
-  const updateEmployer = (id, data, callback = () => {}) => {
+  const updateEmployer = (id, data, callback = () => { }) => {
     EmployerSocieteService.updateComplete(id, data)
       .then(() => {
         fetchEmployers();
@@ -28,7 +30,7 @@ function useEmployerSociete() {
       .catch(err => console.error(err));
   };
 
-  const deleteEmployer = (id, callback = () => {}) => {
+  const deleteEmployer = (id, callback = () => { }) => {
     EmployerSocieteService.deleteComplete(id)
       .then(() => {
         fetchEmployers();
@@ -41,7 +43,15 @@ function useEmployerSociete() {
     fetchEmployers();
   }, []);
 
-  return { employers, fetchEmployers, createEmployer, updateEmployer, deleteEmployer };
+  const fetchEmployersByUtilisateur = (userId) => {
+    setLoading(true);
+    EmployerSocieteService.getByUtilisateur(userId)
+      .then(res => setEmployers(res.data))
+      .catch(err => setError(err))
+      .finally(() => setLoading(false));
+  };
+
+  return { employers, fetchEmployers, createEmployer, updateEmployer, deleteEmployer, fetchEmployersByUtilisateur };
 }
 
 export default useEmployerSociete;
