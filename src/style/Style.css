@@ -1,0 +1,33 @@
+.card:hover {
+    transform: scale(1.02);
+    transition: transform 0.3s;
+}
+
+.card-title {
+  font-weight: 600;
+  font-size: 1.25rem;
+}
+
+.badge {
+  font-size: 0.9rem;
+  padding: 0.5em 1em;
+}
+
+textarea.form-control {
+  min-height: 100px;
+}
+
+.bg-light-blue {
+  background-color: #eefee9;
+}
+
+.rounded-4 {
+  border-radius: 1rem;
+}
+
+.bg-solde-conge {
+  background-color: #6f42c1; /* violet */
+  color: white;
+}
+
+
