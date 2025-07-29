@@ -43,12 +43,23 @@ function useConge() {
       .catch((err) => console.error(err));
   };
 
+  const uploadJustificatif = async (file) => {
+    try {
+      const res = await CongeServices.uploadJustificatif(file);
+      return res.data;
+    } catch (err) {
+      console.error("Erreur upload:", err);
+      return "";
+    }
+  };
+
   return {
     conge,
     fetchConge,
     createConge,
     updateConge,
     deleteConge,
+    uploadJustificatif,
   };
 }
 

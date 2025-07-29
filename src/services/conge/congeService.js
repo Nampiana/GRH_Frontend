@@ -21,6 +21,18 @@ class CongeServices {
   delete(id) {
     return axios.delete(ApiUrl + `/conge/${id}`, header());
   }
+
+  uploadJustificatif(file) {
+    const formData = new FormData();
+    formData.append("file", file);
+    
+    return axios.post(`${ApiUrl}/conge/upload-justification`, formData, {
+      headers: {
+        ...header().headers,
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  }
 }
 
 
