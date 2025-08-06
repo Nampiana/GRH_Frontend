@@ -97,7 +97,7 @@ function Profil() {
                                                     />
                                                 </div>
 
-                                                 <div className="col-md-6 mb-3">
+                                                <div className="col-md-6 mb-3">
                                                     <label>Téléphone</label>
                                                     <input
                                                         type="text"
@@ -108,16 +108,16 @@ function Profil() {
                                                     />
                                                 </div>
 
-                                                {/*    <div className="col-md-6 mb-3">
-                          <label>Date de naissance</label>
-                          <input
-                            type="date"
-                            name="dateNaissance"
-                            value={profil.dateNaissance?.split("T")[0] || ""}
-                            onChange={handleChange}
-                            className="form-control"
-                          />
-                        </div>*/ }
+                                                <div className="col-md-6 mb-3">
+                                                    <label>Date de naissance</label>
+                                                    <input
+                                                        type="date"
+                                                        name="dateNaissance"
+                                                        value={profil.dateNaissance?.split("T")[0] || ""}
+                                                        onChange={handleChange}
+                                                        className="form-control"
+                                                    />
+                                                </div>
                                             </div>
 
                                             <div className="d-flex justify-content-end mt-4">

@@ -8,6 +8,7 @@ import IndividuService from "../../services/individu/individuService";
 import PosteService from "../../services/poste/posteService";
 import ServiceService from "../../services/services/service";
 import FacialCapture from "../../pages/faciale/FacialCapture";
+import ExportPointage from "./ExportPointage";
 
 function CreatePointage() {
   useTemplateScripts();
@@ -193,6 +194,7 @@ function CreatePointage() {
                               </ul>
                             </nav>
                           </div>
+                          <ExportPointage pointage={filteredPointages} />
                         </>
                       )}
                     </div>

@@ -14,6 +14,7 @@ import EmployerSociete from "./pages/employerSociete/EmployerSociete";
 import Conge from "./pages/conge/conge";
 import Pointage from "./pages/pointage/pointage";
 import Profil from "./pages/profil/profil";
+import Parametre from "./pages/parametre/parametre";
 
 function App() {
   return (
@@ -52,6 +53,9 @@ function App() {
 
           {/* Routes des pointage*/}
           <Route path="/profil" element={<Profil />} />
+
+          {/* Routes des parametre*/}
+          <Route path="/parametre" element={<Parametre />} />
 
         </Routes>
       </AuthProvider>

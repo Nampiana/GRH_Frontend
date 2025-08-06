@@ -94,7 +94,7 @@ function Topbar() {
                 </a>
                 <ul className="show-notification profile-notification">
                   <li>
-                    <a href="#!">
+                    <a href="/parametre">
                       <i className="ti-settings"></i> Settings
                     </a>
                   </li>

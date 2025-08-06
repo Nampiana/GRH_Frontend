@@ -9,10 +9,16 @@ const FacialCapture = ({ employerId, pointage, createPointage, updatePointage })
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    axios.get(`http://localhost:8000/faces/${employerId}.jpg`)
+    axios
+      .get(`http://localhost:8000/faces/${employerId}.jpg`)
       .then(() => setFaceExists(true))
       .catch(() => setFaceExists(false));
   }, [employerId]);
+
+  const showMessage = (text) => {
+    setMessage(text);
+    setTimeout(() => setMessage(""), 2000); // Efface après 2 secondes
+  };
 
   const captureAndSend = async () => {
     setLoading(true);
@@ -27,7 +33,7 @@ const FacialCapture = ({ employerId, pointage, createPointage, updatePointage })
       formData.append("employer_id", employerId);
       await axios.post("http://localhost:8000/register", formData);
       setFaceExists(true);
-      setMessage("✅ Visage enregistré. Vous pouvez maintenant pointer.");
+      showMessage("✅ Visage enregistré. Vous pouvez maintenant pointer.");
       setLoading(false);
       return;
     }
@@ -36,29 +42,30 @@ const FacialCapture = ({ employerId, pointage, createPointage, updatePointage })
     const matchedId = res.data.employerId;
 
     if (!matchedId || matchedId !== employerId) {
-      setMessage("❌ Visage non reconnu ou ne correspond pas à votre profil.");
+      showMessage("❌ Visage non reconnu ou ne correspond pas à votre profil.");
       setLoading(false);
       return;
     }
 
     const now = new Date().toISOString();
-    const todayPointage = pointage.find(p =>
-      p.idEmployerSociete === employerId &&
-      new Date(p.dateArriver).toDateString() === new Date().toDateString()
+    const todayPointage = pointage.find(
+      (p) =>
+        p.idEmployerSociete === employerId &&
+        new Date(p.dateArriver).toDateString() === new Date().toDateString()
     );
 
     if (!todayPointage) {
       createPointage({ idEmployerSociete: employerId, dateArriver: now }, () => {
-        setMessage("✅ Arrivée enregistrée avec succès !");
+        showMessage("✅ Arrivée enregistrée avec succès !");
         setLoading(false);
       });
     } else if (!todayPointage.dateDepart) {
       updatePointage(todayPointage.id, { dateDepart: now }, () => {
-        setMessage("✅ Départ enregistré avec succès !");
+        showMessage("✅ Départ enregistré avec succès !");
         setLoading(false);
       });
     } else {
-      setMessage("⏱️ Vous avez déjà pointé arrivée et départ aujourd'hui.");
+      showMessage("⏱️ Vous avez déjà pointé arrivée et départ aujourd'hui.");
       setLoading(false);
     }
   };
@@ -79,9 +86,7 @@ const FacialCapture = ({ employerId, pointage, createPointage, updatePointage })
       >
         {loading ? "Analyse..." : "📸 Scanner et Pointer"}
       </button>
-      {message && (
-        <div className="alert alert-info mt-3">{message}</div>
-      )}
+      {message && <div className="alert alert-info mt-3">{message}</div>}
     </div>
   );
 };

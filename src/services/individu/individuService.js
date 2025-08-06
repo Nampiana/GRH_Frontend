@@ -21,6 +21,11 @@ class ServiceServices {
   delete(id) {
     return axios.delete(ApiUrl + `/individu/${id}`, header());
   }
+
+  changePassword(id, data) {
+    return axios.put(ApiUrl + `/individu/${id}/password`, data, header());
+  }
+
 }
 
 
