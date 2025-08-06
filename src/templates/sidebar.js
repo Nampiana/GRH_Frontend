@@ -150,7 +150,7 @@ function Sidebar() {
               </li>
               <li>
                 <Link to="/conge">
-                  <i className="ti-time me-2" style={{ color: "#dc3545" }}></i> Congé
+                  <i className="ti-calendar me-2" style={{ color: "#35dcc6ff" }}></i> Congé
                 </Link>
               </li>
             </>
@@ -165,7 +165,7 @@ function Sidebar() {
               </li>
               <li>
                 <Link to="/conge">
-                  <i className="ti-time me-2" style={{ color: "#dc3545" }}></i> Congé
+                  <i className="ti-calendar me-2" style={{ color: "#35dcc6ff" }}></i> Congé
                 </Link>
               </li>
             </>

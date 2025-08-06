@@ -21,6 +21,7 @@ export const AuthProvider = ({ children }) => {
       console.log("tssssss", res);
 
       const userData = {
+        idIndividu: res.data.idIndividu,
         username: res.data.nom,
         email: res.data.email,
         societe: res.data.idSociete,

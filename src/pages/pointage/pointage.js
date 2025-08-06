@@ -7,6 +7,7 @@ import EmployerSocieteService from "../../services/employerSociete/employerSocie
 import IndividuService from "../../services/individu/individuService";
 import PosteService from "../../services/poste/posteService";
 import ServiceService from "../../services/services/service";
+import FacialCapture from "../../pages/faciale/FacialCapture";
 
 function CreatePointage() {
   useTemplateScripts();
@@ -111,56 +112,14 @@ function CreatePointage() {
                           <span className="badge badge-success p-2">{successMessage}</span>
                         )}
 
-                        <div className="d-flex gap-3 justify-content-center">
-                          <button
-                            className="btn btn-success btn-lg px-4"
-                            onClick={() => {
-                              const now = new Date().toISOString();
-                              const payload = {
-                                dateArriver: now,
-                                idEmployerSociete: idemployerSociete,
-                              };
-                              const alreadyArrived = pointage.some(p =>
-                                p.idEmployerSociete === idemployerSociete &&
-                                !p.dateDepart &&
-                                new Date(p.dateArriver).toDateString() === new Date().toDateString()
-                              );
-                              if (alreadyArrived) return;
-                              createPointage(payload, () => {
-                                setSuccessMessage("✅ Arrivée pointée !");
-                                setTimeout(() => setSuccessMessage(""), 3000);
-                              });
-                            }}
-                          >
-                            <i className="icofont-walking"></i> Pointe mon arrivée
-                          </button>
-
-                          <button
-                            className="btn btn-danger btn-lg px-4"
-                            onClick={() => {
-                              const todayPointage = pointage.find(p =>
-                                p.idEmployerSociete === idemployerSociete &&
-                                !p.dateDepart &&
-                                new Date(p.dateArriver).toDateString() === new Date().toDateString()
-                              );
-                              if (!todayPointage) {
-                                setSuccessMessage("⛔️ Vous devez pointer votre arrivée d'abord !");
-                                return;
-                              }
-                              const now = new Date().toISOString();
-                              const updated = {
-                                ...todayPointage,
-                                dateDepart: now,
-                              };
-                              updatePointage(todayPointage.id, updated, () => {
-                                setSuccessMessage("✅ Départ pointé !");
-                                setTimeout(() => setSuccessMessage(""), 3000);
-                              });
-                            }}
-                          >
-                            <i className="icofont-runner-alt-1"></i> Pointe mon départ
-                          </button>
-                        </div>
+                        {user?.roles === 3 && idemployerSociete && (
+                          <FacialCapture
+                            employerId={idemployerSociete}
+                            pointage={pointage}
+                            createPointage={createPointage}
+                            updatePointage={updatePointage}
+                          />
+                        )}
                       </div>
                     )}
 

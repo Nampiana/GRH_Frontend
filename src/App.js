@@ -13,6 +13,7 @@ import Categorie from "./pages/categorie/Categorie";
 import EmployerSociete from "./pages/employerSociete/EmployerSociete";
 import Conge from "./pages/conge/conge";
 import Pointage from "./pages/pointage/pointage";
+import Profil from "./pages/profil/profil";
 
 function App() {
   return (
@@ -46,8 +47,11 @@ function App() {
           {/* Routes des conge*/}
           <Route path="/conge" element={<Conge />} />
 
-          {/* Routes des poinyage*/}
+          {/* Routes des pointage*/}
           <Route path="/pointage" element={<Pointage />} />
+
+          {/* Routes des pointage*/}
+          <Route path="/profil" element={<Profil />} />
 
         </Routes>
       </AuthProvider>

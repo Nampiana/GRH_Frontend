@@ -99,18 +99,8 @@ function Topbar() {
                     </a>
                   </li>
                   <li>
-                    <a href="#">
+                    <a href="/profil">
                       <i className="ti-user"></i> Profile
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#">
-                      <i className="ti-email"></i> My Messages
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#">
-                      <i className="ti-lock"></i> Lock Screen
                     </a>
                   </li>
                   <li>
