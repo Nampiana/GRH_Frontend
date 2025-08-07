@@ -14,6 +14,8 @@ function ChangePassword() {
     confirmPassword: "",
   });
   const [message, setMessage] = useState("");
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
@@ -132,9 +134,10 @@ function ChangePassword() {
                       </div>
 
                       <div className="text-end">
-                        <button className="btn btn-danger" onClick={handleSubmit}>
+                        <button className="btn btn-danger" onClick={() => setShowConfirmModal(true)}>
                           🔁 Mettre à jour le mot de passe
                         </button>
+
                       </div>
                     </div>
                   </div>
@@ -145,7 +148,35 @@ function ChangePassword() {
           </div>
         </div>
       </div>
+      {showConfirmModal && (
+        <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Confirmation</h5>
+                <button type="button" className="btn-close" onClick={() => setShowConfirmModal(false)}></button>
+              </div>
+              <div className="modal-body">
+                <p>Êtes-vous sûr de vouloir modifier le mot de passe ?</p>
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={() => setShowConfirmModal(false)}>
+                  Annuler
+                </button>
+                <button className="btn btn-danger" onClick={() => {
+                  handleSubmit();
+                  setShowConfirmModal(false);
+                }}>
+                  Confirmer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
+
   );
 }
 

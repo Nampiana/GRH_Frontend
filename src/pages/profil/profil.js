@@ -11,6 +11,11 @@ function Profil() {
     const [profil, setProfil] = useState({});
     const [message, setMessage] = useState("");
 
+    const clearMessage = () => {
+        setTimeout(() => setMessage(""), 2000);
+    };
+
+
     useEffect(() => {
         const userData = JSON.parse(localStorage.getItem("user"));
         if (userData) {
@@ -28,9 +33,16 @@ function Profil() {
 
     const handleSubmit = () => {
         ServiceIndividu.update(profil.id, profil)
-            .then(() => setMessage("✅ Profil mis à jour avec succès."))
-            .catch(() => setMessage("❌ Une erreur est survenue."));
+            .then(() => {
+                setMessage("✅ Profil mis à jour avec succès.");
+                clearMessage();
+            })
+            .catch(() => {
+                setMessage("❌ Une erreur est survenue.");
+                clearMessage();
+            });
     };
+
 
     return (
         <div id="pcoded" className="pcoded">

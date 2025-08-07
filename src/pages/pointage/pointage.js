@@ -194,7 +194,15 @@ function CreatePointage() {
                               </ul>
                             </nav>
                           </div>
-                          <ExportPointage pointage={filteredPointages} />
+                          {user?.roles === 2 && (
+                            <ExportPointage
+                              pointage={filteredPointages}
+                              employers={employers}
+                              individus={individus}
+                              postes={postes}
+                              services={services}
+                            />
+                          )}
                         </>
                       )}
                     </div>
