@@ -21,6 +21,11 @@ class EmployerSocieteService {
   getByUtilisateur(idUtilisateur) {
     return axios.get(ApiUrl + `/employer-societe/by-utilisateur/${idUtilisateur}`, header());
   }
+
+  getByIndividu(idIndividu) {
+  return axios.get(ApiUrl + `/employer-societe/by-individu/${idIndividu}`, header());
+}
+
 }
 
 export default new EmployerSocieteService();

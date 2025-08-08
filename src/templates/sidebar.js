@@ -153,6 +153,11 @@ function Sidebar() {
                   <i className="ti-calendar me-2" style={{ color: "#35dcc6ff" }}></i> Congé
                 </Link>
               </li>
+              <li>
+                <Link to="/contrat">
+                  <i className="ti-calendar me-2" style={{ color: "#35dcc6ff" }}></i> Contrat
+                </Link>
+              </li>
             </>
           )}
 
@@ -166,6 +171,11 @@ function Sidebar() {
               <li>
                 <Link to="/conge">
                   <i className="ti-calendar me-2" style={{ color: "#35dcc6ff" }}></i> Congé
+                </Link>
+              </li>
+               <li>
+                <Link to="/MonContrat">
+                  <i className="ti-calendar me-2" style={{ color: "#35dcc6ff" }}></i> Contrat
                 </Link>
               </li>
             </>
