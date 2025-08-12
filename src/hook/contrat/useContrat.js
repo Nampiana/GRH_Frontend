@@ -33,7 +33,16 @@ function useContrat() {
       .catch((err) => console.error(err));
   };
 
-  return { contrats, fetchContrats, createContrat, deleteContrat };
+  const updateContrat = (id, data, file, callback = () => {}) => {
+  ContratService.updateWithFile(id, data, file)
+    .then(() => {
+      fetchContrats();
+      callback();
+    })
+    .catch((err) => console.error(err));
+};
+
+  return { contrats, fetchContrats, createContrat, deleteContrat, updateContrat };
 }
 
 export default useContrat;

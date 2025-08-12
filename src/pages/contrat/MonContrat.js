@@ -40,6 +40,37 @@ function MonContrat() {
 
     const isPdf = fileUrl.toLowerCase().endsWith(".pdf");
 
+    // à mettre dans MonContrat (au-dessus du return)
+    const downloadDirect = async () => {
+        if (!fileUrl) return;
+        try {
+            const response = await fetch(fileUrl, { credentials: "include" });
+            if (!response.ok) throw new Error("Téléchargement échoué");
+
+            const blob = await response.blob();
+            const filename = monContrat?.fichierContrat || "contrat";
+
+            // Compatibilité IE/Edge Legacy
+            if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+                window.navigator.msSaveOrOpenBlob(blob, filename);
+                return;
+            }
+
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename; // force l’enregistrement avec ce nom
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error(err);
+            alert("Impossible de télécharger le fichier.");
+        }
+    };
+
+
     return (
         <div id="pcoded" className="pcoded">
             <div className="pcoded-container navbar-wrapper">
@@ -123,8 +154,16 @@ function MonContrat() {
                                                             }}
                                                             className="img-fluid"
                                                         />
-                                                    )}
+                                                    )} 
                                                     {!isPdf && <p className="text-muted mt-2">Cliquez pour agrandir</p>}
+                                                    {fileUrl && (
+                                                        <div className="mt-3 d-flex justify-content-center gap-2">
+                                                            <button type="button" onClick={downloadDirect} className="btn btn-primary">
+                                                                <i className="icofont-download"></i> Télécharger le contrat
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                   
                                                 </div>
                                             </div>
 

@@ -9,12 +9,17 @@ import IndividuService from "../../services/individu/individuService";
 
 function GestionContrat() {
     useTemplateScripts();
-    const { contrats, fetchContrats, createContrat, deleteContrat } = useContrat();
+    const { contrats, fetchContrats, createContrat, deleteContrat, updateContrat } = useContrat();
     const [form, setForm] = useState({});
     const [file, setFile] = useState(null);
     const [employers, setEmployers] = useState([]);
     const [individus, setIndividus] = useState([]);
     const [success, setSuccess] = useState("");
+    const [editMode, setEditMode] = useState(false);
+    const [editId, setEditId] = useState(null);
+    const formRef = useRef(null);
+
+
 
     const fileInputRef = useRef(null);
 
@@ -44,25 +49,52 @@ function GestionContrat() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        let filename = "";
-        if (file) {
-            const res = await contratService.uploadFile(file);
-            filename = res.data;
-        }
-
-        await createContrat({ ...form, fichierContrat: filename }, () => {
-            setSuccess("✅ Contrat ajouté avec succès !");
-            setTimeout(() => setSuccess(""), 2000);
-            setForm(initialForm);
-            setFile(null);
-            if (fileInputRef.current) {
-                fileInputRef.current.value = "";
+        if (editMode) {
+            await updateContrat(editId, form, file, () => {
+                setSuccess("✏️ Contrat modifié avec succès !");
+                setTimeout(() => setSuccess(""), 2000);
+                setForm(initialForm);
+                setFile(null);
+                setEditMode(false);
+                setEditId(null);
+                if (fileInputRef.current) fileInputRef.current.value = "";
+            });
+        } else {
+            let filename = "";
+            if (file) {
+                const res = await contratService.uploadFile(file);
+                filename = res.data;
             }
-        });
+            await createContrat({ ...form, fichierContrat: filename }, () => {
+                setSuccess("✅ Contrat ajouté avec succès !");
+                setTimeout(() => setSuccess(""), 2000);
+                setForm(initialForm);
+                setFile(null);
+                if (fileInputRef.current) fileInputRef.current.value = "";
+            });
+        }
     };
 
 
+
     const formatDate = (date) => new Date(date).toLocaleDateString("fr-FR");
+
+    const handleEdit = (contrat) => {
+        setForm({
+            idEmployerSociete: contrat.idEmployerSociete,
+            typeContrat: contrat.typeContrat,
+            dateDebut: contrat.dateDebut ? contrat.dateDebut.split("T")[0] : "",
+            dateFin: contrat.dateFin ? contrat.dateFin.split("T")[0] : "",
+            salairedebase: contrat.salairedebase,
+            statu: contrat.statu
+        });
+        setFile(null);
+        setEditMode(true);
+        setEditId(contrat.id);
+
+        formRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
 
     return (
         <div id="pcoded" className="pcoded">
@@ -81,7 +113,7 @@ function GestionContrat() {
                                             <div className="alert alert-success">{success}</div>
                                         )}
 
-                                        <div className="card shadow-lg border-0 rounded-4 p-4 bg-light mb-4">
+                                        <div ref={formRef} className="card shadow-lg border-0 rounded-4 p-4 bg-light mb-4">
                                             <h5 className="mb-3 text-primary">➕ Ajouter un contrat</h5>
                                             <form onSubmit={handleSubmit} className="row g-3">
                                                 <div className="col-md-6">
@@ -196,7 +228,7 @@ function GestionContrat() {
                                                                 <div className="card-body">
                                                                     <h6 className="card-title text-primary">{getNomComplet(c.idEmployerSociete)}</h6>
                                                                     <p className="mb-1"><strong>Type:</strong> {c.typeContrat}</p>
-                                                                   <p className="mb-1"><strong>Période:</strong> {formatDate(c.dateDebut)} ➡ {c.dateFin ? formatDate(c.dateFin) : 'Non défini'}</p>
+                                                                    <p className="mb-1"><strong>Période:</strong> {formatDate(c.dateDebut)} ➡ {c.dateFin ? formatDate(c.dateFin) : 'Non défini'}</p>
                                                                     <p className="mb-1"><strong>Salaire:</strong> {c.salairedebase} Ar</p>
                                                                     <p className="mb-1">
                                                                         <strong>Statut:</strong>{" "}
@@ -217,6 +249,12 @@ function GestionContrat() {
                                                                         className="btn btn-sm btn-outline-danger mt-2 ms-2"
                                                                     >
                                                                         <i className="icofont-trash"></i> Supprimer
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleEdit(c)}
+                                                                        className="btn btn-sm btn-outline-warning mt-2 ms-2"
+                                                                    >
+                                                                        <i className="icofont-edit"></i> Modifier
                                                                     </button>
                                                                 </div>
                                                             </div>

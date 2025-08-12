@@ -17,6 +17,7 @@ import Profil from "./pages/profil/profil";
 import Parametre from "./pages/parametre/parametre";
 import Contrat from "./pages/contrat/GestionContrat";
 import MonContrat from "./pages/contrat/MonContrat";
+import Sanction from "./pages/sanction/sanction";
 
 function App() {
   return (
@@ -62,6 +63,9 @@ function App() {
           {/* Routes des contrat*/}
           <Route path="/contrat" element={<Contrat />} />
           <Route path="/MonContrat" element={<MonContrat />} />
+
+          {/* Routes des sanction*/}
+          <Route path="/sanction" element={<Sanction />} />
 
         </Routes>
       </AuthProvider>

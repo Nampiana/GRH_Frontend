@@ -33,6 +33,21 @@ class ContratService {
       }
     });
   }
+
+  updateWithFile(id, data, file) {
+  const formData = new FormData();
+  formData.append("contrat", new Blob([JSON.stringify(data)], { type: "application/json" }));
+  if (file) {
+    formData.append("file", file);
+  }
+  return axios.put(ApiUrl + `/contrat/update-with-file/${id}`, formData, {
+    headers: {
+      ...header().headers,
+      "Content-Type": "multipart/form-data"
+    }
+  });
+}
+
 }
 
 export default new ContratService();
