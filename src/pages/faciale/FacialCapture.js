@@ -75,6 +75,7 @@ const FacialCapture = ({ employerId, pointage, createPointage, updatePointage })
       <Webcam
         ref={webcamRef}
         screenshotFormat="image/jpeg"
+        screenshotQuality={0.9}
         width={320}
         height={240}
       />

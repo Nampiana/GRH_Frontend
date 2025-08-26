@@ -7,6 +7,7 @@ import ServiceServices from "../../services/services/service";
 import IndividuServices from "../../services/individu/individuService";
 import PosteServices from "../../services/poste/posteService";
 import CategorieServices from "../../services/categorie/categorie";
+import DepartementServices from "../../services/departement/departement";
 import utilisateurServices from "../../services/utilisateur/utilisateurService";
 import useTemplateScripts from "../../utils/useTemplateScripts";
 import useUtilisateur from "../../hook/utilisateur/utilisateurHook";
@@ -15,14 +16,21 @@ function EmployerSociete() {
   useTemplateScripts();
 
   const { employers, createEmployer, updateEmployer, deleteEmployer } = useEmployerSociete();
+  const { updateUtilisateur } = useUtilisateur();
+
+  // Données
   const [individus, setIndividus] = useState([]);
   const [societes, setSocietes] = useState([]);
   const [utilisateur, setUtilisateur] = useState([]);
   const [services, setServices] = useState([]);
   const [postes, setPostes] = useState([]);
   const [categories, setCategories] = useState([]);
-  const { updateUtilisateur } = useUtilisateur();
+  const [departements, setDepartements] = useState([]);
 
+  // User (roles, societe)
+  const [user, setUser] = useState({ roles: 1, societe: "" });
+
+  // Formulaire (➕ salaireBase)
   const [formData, setFormData] = useState({
     nom: "",
     prenom: "",
@@ -34,17 +42,26 @@ function EmployerSociete() {
     idService: "",
     idPoste: "",
     idCategorie: "",
+    salaireBase: "", // ⇐ NEW
     role: 3
   });
 
+  // Sélections / Modales
   const [selectedEmployer, setSelectedEmployer] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  // Messages
   const [successMessage, setSuccessMessage] = useState("");
-  const [user, setUser] = useState({ roles: 1, societe: "" });
+
+  // Filtres
   const [selectedSocieteFilter, setSelectedSocieteFilter] = useState("");
+  const [searchName, setSearchName] = useState("");
+  const [selectedDepartementFilter, setSelectedDepartementFilter] = useState("");
+  const [selectedServiceFilter, setSelectedServiceFilter] = useState("");
+  const [selectedPosteFilter, setSelectedPosteFilter] = useState("");
 
-
+  // Récup user
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem("user"));
     if (userData) {
@@ -52,7 +69,7 @@ function EmployerSociete() {
     }
   }, []);
 
-
+  // Charger référentiels
   useEffect(() => {
     IndividuServices.getAll().then(res => setIndividus(res.data.content || res.data));
     SocieteServices.getAll().then(res => setSocietes(res.data.content || res.data));
@@ -60,28 +77,67 @@ function EmployerSociete() {
     PosteServices.getAll().then(res => setPostes(res.data.content || res.data));
     CategorieServices.getAll().then(res => setCategories(res.data.content || res.data));
     utilisateurServices.getAll().then(res => setUtilisateur(res.data.content || res.data));
+    DepartementServices.getAll().then(res => setDepartements(res.data.content || res.data));
   }, []);
 
-  const handleInputChange = e => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  // Format Ariary (fallback si Intl MGA indisponible)
+  const formatAriary = (val) => {
+    if (val === null || val === undefined || val === "") return "N/A";
+    try {
+      return new Intl.NumberFormat("fr-MG", {
+        style: "currency",
+        currency: "MGA",
+        maximumFractionDigits: 0
+      }).format(Number(val));
+    } catch {
+      return `${Number(val).toLocaleString("fr-MG")} Ar`;
+    }
   };
 
+  // Form handlers (convertit salaireBase en nombre si possible)
+  const handleInputChange = e => {
+    const { name, value } = e.target;
+    if (name === "salaireBase") {
+      const num = value === "" ? "" : Math.max(0, Number(value));
+      setFormData(prev => ({ ...prev, [name]: isNaN(num) ? "" : num }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      nom: "",
+      prenom: "",
+      adresse: "",
+      email: "",
+      password: "",
+      telephone: "",
+      idSociete: "",
+      idService: "",
+      idPoste: "",
+      idCategorie: "",
+      salaireBase: "", // ⇐ reset
+      role: user.roles === 1 ? 2 : 3
+    });
+    setSelectedEmployer(null);
+  };
+
+  // Create / Update (➕ salaireBase dans employerSociete)
   const handleCreateOrUpdate = () => {
     let roleToAssign = formData.role;
-    console.log("roles pr", formData.role);
-
 
     if (!selectedEmployer && user.roles === 1) {
       roleToAssign = 2;
     }
-
 
     const payload = {
       employerSociete: {
         idSociete: formData.idSociete,
         idService: formData.idService,
         idPoste: formData.idPoste,
-        idCategorie: formData.idCategorie
+        idCategorie: formData.idCategorie,
+        salaireBase: formData.salaireBase === "" ? null : Number(formData.salaireBase) // ⇐ NEW
       },
       nom: formData.nom,
       prenom: formData.prenom,
@@ -98,22 +154,19 @@ function EmployerSociete() {
     };
 
     if (selectedEmployer) {
-      console.log("employer", selectedEmployer);
-
       updateEmployer(selectedEmployer.id, payload, () => {
-        // 🔵 Mise à jour aussi dans Utilisateur
+        // Mettre à jour aussi l'utilisateur lié
         const utilisateurToUpdate = {
           idIndividu: selectedEmployer.idIndividue,
           idSociete: formData.idSociete,
           etat: 1,
           roles: parseInt(formData.role, 10)
         };
-        console.log("users", utilisateurToUpdate);
 
         updateUtilisateur(selectedEmployer.idUtilisateur, utilisateurToUpdate, () => {
           IndividuServices.getAll().then(res => setIndividus(res.data.content || res.data));
           utilisateurServices.getAll().then(res => setUtilisateur(res.data.content || res.data));
-          setSuccessMessage("Employé  modifiés avec succès !");
+          setSuccessMessage("Employé modifié avec succès !");
           setShowModal(false);
           resetForm();
         });
@@ -129,7 +182,7 @@ function EmployerSociete() {
     }
   };
 
-
+  // Edit / Delete (pré-remplir salaireBase)
   const handleEdit = employer => {
     const individu = individus.find(i => i.id === employer.idIndividue);
     const userRole = utilisateur.find(u => u.id === employer.idUtilisateur)?.roles || 3;
@@ -146,6 +199,7 @@ function EmployerSociete() {
       idService: employer.idService,
       idPoste: employer.idPoste,
       idCategorie: employer.idCategorie,
+      salaireBase: employer.salaireBase ?? "", // ⇐ NEW
       role: userRole
     });
     setShowModal(true);
@@ -165,29 +219,13 @@ function EmployerSociete() {
     });
   };
 
-  const resetForm = () => {
-    setFormData({
-      nom: "",
-      prenom: "",
-      adresse: "",
-      email: "",
-      telephone: "",
-      idSociete: "",
-      idService: "",
-      idPoste: "",
-      idCategorie: "",
-      role: user.roles === 1 ? 2 : 3
-    });
-    setSelectedEmployer(null);
-  };
-
+  // Auto-hide message
   useEffect(() => {
     if (successMessage) {
       const timer = setTimeout(() => setSuccessMessage(""), 3000);
       return () => clearTimeout(timer);
     }
   }, [successMessage]);
-
 
   return (
     <div id="pcoded" className="pcoded">
@@ -211,13 +249,15 @@ function EmployerSociete() {
                       >
                         <i className="icofont icofont-plus"></i> Créer
                       </button>
-
                     </div>
+
                     {successMessage && (
                       <div className="alert alert-success" role="alert">
                         {successMessage}
                       </div>
                     )}
+
+                    {/* Filtre Société (rôle 1) */}
                     {user.roles === 1 && (
                       <div className="mb-3">
                         <label>Filtrer par Société :</label>
@@ -234,7 +274,97 @@ function EmployerSociete() {
                       </div>
                     )}
 
+                    {/* Filtres avancés */}
+                    <div className="card p-3 mb-3">
+                      <div className="row g-2 align-items-end">
+                        <div className="col-md-3">
+                          <label>Recherche (Nom / Prénom)</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Rechercher..."
+                            value={searchName}
+                            onChange={(e) => setSearchName(e.target.value)}
+                          />
+                        </div>
 
+                        <div className="col-md-3">
+                          <label>Département</label>
+                          <select
+                            className="form-control"
+                            value={selectedDepartementFilter}
+                            onChange={(e) => {
+                              setSelectedDepartementFilter(e.target.value);
+                              setSelectedServiceFilter("");
+                              setSelectedPosteFilter("");
+                            }}
+                          >
+                            <option value="">Tous les départements</option>
+                            {(user.roles === 2
+                              ? departements.filter(d => d.idSociete === user.societe)
+                              : departements
+                            ).map(d => (
+                              <option key={d.id} value={d.id}>{d.nomDepartement}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="col-md-3">
+                          <label>Service</label>
+                          <select
+                            className="form-control"
+                            value={selectedServiceFilter}
+                            onChange={(e) => {
+                              setSelectedServiceFilter(e.target.value);
+                              setSelectedPosteFilter("");
+                            }}
+                          >
+                            <option value="">Tous les services</option>
+                            {(user.roles === 2
+                              ? services.filter(s => s.idSociete === user.societe)
+                              : services
+                            )
+                              .filter(s => !selectedDepartementFilter || s.idDepartement === selectedDepartementFilter)
+                              .map(s => (
+                                <option key={s.id} value={s.id}>{s.nomService}</option>
+                              ))}
+                          </select>
+                        </div>
+
+                        <div className="col-md-3">
+                          <label>Poste</label>
+                          <select
+                            className="form-control"
+                            value={selectedPosteFilter}
+                            onChange={(e) => setSelectedPosteFilter(e.target.value)}
+                          >
+                            <option value="">Tous les postes</option>
+                            {(user.roles === 2
+                              ? postes.filter(p => p.idSociete === user.societe)
+                              : postes
+                            ).map(p => (
+                              <option key={p.id} value={p.id}>{p.nomPoste}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="col-12 d-flex gap-2 mt-2">
+                          <button
+                            className="btn btn-light border"
+                            onClick={() => {
+                              setSearchName("");
+                              setSelectedDepartementFilter("");
+                              setSelectedServiceFilter("");
+                              setSelectedPosteFilter("");
+                            }}
+                          >
+                            Réinitialiser les filtres
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Tableau (➕ colonne Salaire) */}
                     {employers.length === 0 ? (
                       <p className="text-center text-muted">Aucun employé enregistré.</p>
                     ) : (
@@ -251,8 +381,9 @@ function EmployerSociete() {
                               <th>Catégorie</th>
                               <th>Téléphone</th>
                               <th>Email</th>
-                              <th>Roles</th>
+                              <th>Rôles</th>
                               <th>Date d'embauche</th>
+                              <th>Salaire de base</th> {/* ⇐ NEW */}
                               <th>Actions</th>
                             </tr>
                           </thead>
@@ -260,14 +391,29 @@ function EmployerSociete() {
                             {employers
                               .filter(e => {
                                 if (user.roles === 1) {
-                                  return selectedSocieteFilter ? e.idSociete === selectedSocieteFilter : true;
+                                  if (selectedSocieteFilter && e.idSociete !== selectedSocieteFilter) return false;
+                                } else if (user.roles === 2) {
+                                  if (e.idSociete !== user.societe) return false;
+                                } else {
+                                  return false;
                                 }
-                                if (user.roles === 2) {
-                                  return e.idSociete === user.societe;
-                                }
-                                return false;
-                              })
 
+                                if (searchName.trim()) {
+                                  const individu = individus.find(i => i.id === e.idIndividue);
+                                  const full = `${(individu?.nom || "")} ${(individu?.prenom || "")}`.toLowerCase();
+                                  if (!full.includes(searchName.trim().toLowerCase())) return false;
+                                }
+
+                                if (selectedDepartementFilter) {
+                                  const serv = services.find(s => s.id === e.idService);
+                                  if (!serv || serv.idDepartement !== selectedDepartementFilter) return false;
+                                }
+
+                                if (selectedServiceFilter && e.idService !== selectedServiceFilter) return false;
+                                if (selectedPosteFilter && e.idPoste !== selectedPosteFilter) return false;
+
+                                return true;
+                              })
                               .map((e, index) => {
                                 const individu = individus.find(i => i.id === e.idIndividue) || {};
                                 return (
@@ -288,6 +434,7 @@ function EmployerSociete() {
                                       })()}
                                     </td>
                                     <td>{e.dateEmbauche ? new Date(e.dateEmbauche).toLocaleDateString() : "N/A"}</td>
+                                    <td>{formatAriary(e.salaireBase)}</td> {/* ⇐ NEW */}
                                     <td>
                                       <button className="btn btn-warning btn-sm me-2" onClick={() => handleEdit(e)}>
                                         Modifier
@@ -300,7 +447,6 @@ function EmployerSociete() {
                                 );
                               })}
                           </tbody>
-
                         </table>
                       </div>
                     )}
@@ -308,7 +454,7 @@ function EmployerSociete() {
                 </div>
               </div>
 
-              {/* Modal création/modification */}
+              {/* Modal création/modification (➕ champ salaireBase) */}
               {showModal && (
                 <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
                   <div className="modal-dialog modal-dialog-centered modal-lg">
@@ -319,10 +465,7 @@ function EmployerSociete() {
                         </h5>
                         <button className="btn-close btn-close-white" onClick={() => setShowModal(false)}></button>
                       </div>
-                      <div
-                        className="modal-body"
-                        style={{ maxHeight: "400px", overflowY: "auto" }}
-                      >
+                      <div className="modal-body" style={{ maxHeight: "400px", overflowY: "auto" }}>
                         {["nom", "prenom", "adresse", "email", "telephone"].map(field => (
                           <div key={field}>
                             <label className="mt-2">{field.charAt(0).toUpperCase() + field.slice(1)}</label>
@@ -349,7 +492,7 @@ function EmployerSociete() {
                           </div>
                         )}
 
-                        {user.roles === 2 || selectedEmployer ? (
+                        {(user.roles === 2 || selectedEmployer) ? (
                           <div>
                             <label className="mt-2">Rôle</label>
                             <select
@@ -363,14 +506,8 @@ function EmployerSociete() {
                             </select>
                           </div>
                         ) : (
-                          !selectedEmployer && (
-                            <input type="hidden" name="role" value={2} />
-                          )
+                          !selectedEmployer && <input type="hidden" name="role" value={2} />
                         )}
-
-
-
-
 
                         <label className="mt-2">Société</label>
                         <select
@@ -380,7 +517,6 @@ function EmployerSociete() {
                           onChange={handleInputChange}
                         >
                           <option value="">Sélectionner une société</option>
-
                           {user.roles === 2
                             ? societes
                               .filter(s => s.id === user.societe)
@@ -392,7 +528,6 @@ function EmployerSociete() {
                             ))
                           }
                         </select>
-
 
                         <label className="mt-2">Service</label>
                         <select
@@ -427,12 +562,35 @@ function EmployerSociete() {
                         </select>
 
                         <label className="mt-2">Catégorie</label>
-                        <select className="form-control" name="idCategorie" value={formData.idCategorie} onChange={handleInputChange}>
+                        <select
+                          className="form-control"
+                          name="idCategorie"
+                          value={formData.idCategorie}
+                          onChange={handleInputChange}
+                        >
                           <option value="">Sélectionner une catégorie</option>
                           {categories.map(c => (
                             <option key={c.id} value={c.id}>{c.nomCategorie}</option>
                           ))}
                         </select>
+
+                        {/* NEW: Salaire de base */}
+                        <div>
+                          <label className="mt-2">Salaire de base (Ariary)</label>
+                          <input
+                            type="number"
+                            className="form-control"
+                            name="salaireBase"
+                            min="0"
+                            step="1"
+                            placeholder="Ex: 450000"
+                            value={formData.salaireBase}
+                            onChange={handleInputChange}
+                          />
+                          <small className="text-muted">
+                            {formData.salaireBase !== "" ? `Aperçu : ${formatAriary(formData.salaireBase)}` : ""}
+                          </small>
+                        </div>
                       </div>
                       <div className="modal-footer">
                         <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Annuler</button>
@@ -445,6 +603,7 @@ function EmployerSociete() {
                 </div>
               )}
 
+              {/* Modal suppression */}
               {showDeleteModal && (
                 <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
                   <div className="modal-dialog modal-dialog-centered">

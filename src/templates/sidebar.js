@@ -112,6 +112,21 @@ function Sidebar() {
                   <i className="ti-time me-2" style={{ color: "#dc3545" }}></i> Pointage
                 </Link>
               </li>
+              <li>
+                <Link to="/parametreGenereaux">
+                  <i className="ti-alert me-2" style={{ color: "#d43220ff" }}></i> parametre Genereaux
+                </Link>
+              </li>
+              <li>
+                <Link to="/rubriquePaie">
+                  <i className="ti-alert me-2" style={{ color: "#d43220ff" }}></i> Rubrique Paie
+                </Link>
+              </li>
+              <li>
+                <Link to="/rubriqueCategorie">
+                  <i className="ti-alert me-2" style={{ color: "#d43220ff" }}></i> Rubrique Categorie
+                </Link>
+              </li>
 
             </>
           )}
@@ -155,9 +170,40 @@ function Sidebar() {
               </li>
               <li>
                 <Link to="/contrat">
-                  <i className="ti-calendar me-2" style={{ color: "#35dcc6ff" }}></i> Contrat
+                  <i className="ti-briefcase me-2" style={{ color: "#8bdc35ff" }}></i> Contrat
                 </Link>
               </li>
+              <li>
+                <Link to="/sanction">
+                  <i className="ti-alert me-2" style={{ color: "#d43220ff" }}></i> Sanction
+                </Link>
+              </li>
+              <li>
+                <Link to="/Paie">
+                  <i className="ti-alert me-2" style={{ color: "#d43220ff" }}></i> Paie
+                </Link>
+              </li>
+              <li>
+                <Link to="/parametreGenereaux">
+                  <i className="ti-alert me-2" style={{ color: "#d43220ff" }}></i> parametre Genereaux
+                </Link>
+              </li>
+              <li>
+                <Link to="/rubriquePaie">
+                  <i className="ti-alert me-2" style={{ color: "#d43220ff" }}></i> Rubrique Paie
+                </Link>
+              </li>
+              <li>
+                <Link to="/rubriqueCategorie">
+                  <i className="ti-alert me-2" style={{ color: "#d43220ff" }}></i> Rubrique Categorie
+                </Link>
+              </li>
+              <li>
+                <Link to="/moispaie">
+                  <i className="ti-alert me-2" style={{ color: "#d43220ff" }}></i> Mois Paie
+                </Link>
+              </li>
+
             </>
           )}
 
@@ -173,11 +219,17 @@ function Sidebar() {
                   <i className="ti-calendar me-2" style={{ color: "#35dcc6ff" }}></i> Congé
                 </Link>
               </li>
-               <li>
+              <li>
                 <Link to="/MonContrat">
-                  <i className="ti-calendar me-2" style={{ color: "#35dcc6ff" }}></i> Contrat
+                  <i className="ti-briefcase me-2" style={{ color: "#8bdc35ff" }}></i> Contrat
                 </Link>
               </li>
+              <li>
+                <Link to="/sanction">
+                  <i className="ti-alert me-2" style={{ color: "#d43220ff" }}></i> Sanction
+                </Link>
+              </li>
+
             </>
           )}
         </ul>

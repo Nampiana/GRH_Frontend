@@ -18,6 +18,11 @@ import Parametre from "./pages/parametre/parametre";
 import Contrat from "./pages/contrat/GestionContrat";
 import MonContrat from "./pages/contrat/MonContrat";
 import Sanction from "./pages/sanction/sanction";
+import Paie from "./pages/paie/PaieEmployer";
+import ParametreGenereaux from "./pages/parametreGenereaux/ParametreGenereaux";
+import RubriquePaie from "./pages/rubriquePaie/RubriquePaie";
+import RubriqueCategorie from "./pages/rubriqueCategorie/RubriqueCategorie";
+import MoisPaie from "./pages/paie/MoisPaie";
 
 function App() {
   return (
@@ -66,6 +71,22 @@ function App() {
 
           {/* Routes des sanction*/}
           <Route path="/sanction" element={<Sanction />} />
+
+          {/* Routes des paie*/}
+          <Route path="/paie" element={<Paie />} />
+
+          {/* Routes des parametre genereaux*/}
+          <Route path="/parametreGenereaux" element={<ParametreGenereaux />} />
+
+          {/* Routes des rubrique*/}
+          <Route path="/rubriquePaie" element={<RubriquePaie />} />
+          {/* Routes des rubrique categorie*/}
+          <Route path="/rubriqueCategorie" element={<RubriqueCategorie />} />
+
+          {/* Routes des mois paie*/}
+          <Route path="/moispaie" element={<MoisPaie />} />
+
+
 
         </Routes>
       </AuthProvider>

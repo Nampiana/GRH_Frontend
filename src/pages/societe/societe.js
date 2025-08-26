@@ -142,7 +142,7 @@ function Societe() {
                                   <div className="card-body text-center">
                                     {s.logo && (
                                       <img
-                                        src={`http://localhost:8080/api/societe/logo/${s.logo}`}
+                                        src={`http://localhost:8081/api/societe/logo/${s.logo}`}
                                         alt="Logo"
                                         className="rounded-circle mb-3"
                                         style={{
@@ -274,7 +274,7 @@ function Societe() {
                     <input type="file" accept="image/*" className="form-control" onChange={handleFileChangeUpdate} />
                     {logo && (
                       <div className="mt-2 text-center">
-                        <img src={`http://localhost:8080/api/societe/logo/${logo}`} alt="Logo actuel"
+                        <img src={`http://localhost:8081/api/societe/logo/${logo}`} alt="Logo actuel"
                           style={{ width: "80px", height: "80px", objectFit: "cover", borderRadius: "8px", border: "2px solid #007bff" }} />
                         <p className="small text-muted mt-1">{logo}</p>
                       </div>

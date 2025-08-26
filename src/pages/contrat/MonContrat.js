@@ -35,7 +35,7 @@ function MonContrat() {
     const closeModal = () => setModalVisible(false);
 
     const fileUrl = monContrat?.fichierContrat
-        ? `http://localhost:8080/uploads/contrat/${monContrat.fichierContrat}`
+        ? `http://localhost:8081/uploads/contrat/${monContrat.fichierContrat}`
         : "";
 
     const isPdf = fileUrl.toLowerCase().endsWith(".pdf");
@@ -154,7 +154,7 @@ function MonContrat() {
                                                             }}
                                                             className="img-fluid"
                                                         />
-                                                    )} 
+                                                    )}
                                                     {!isPdf && <p className="text-muted mt-2">Cliquez pour agrandir</p>}
                                                     {fileUrl && (
                                                         <div className="mt-3 d-flex justify-content-center gap-2">
@@ -163,7 +163,7 @@ function MonContrat() {
                                                             </button>
                                                         </div>
                                                     )}
-                                                   
+
                                                 </div>
                                             </div>
 

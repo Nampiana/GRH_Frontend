@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }) => {
       }
 
     } catch (err) {
-      console.error('Erreur de connexion :', err.response?.data?.error);
+      console.error('Erreur de connexionssss :', err.response?.data?.error);
       setAlertMessage({ type: "danger", text: err.response?.data?.error || "Erreur de connexion !" });
       toast.error(err.response?.data?.error || "Erreur inconnue", {
         position: "top-right",
