@@ -23,6 +23,9 @@ import ParametreGenereaux from "./pages/parametreGenereaux/ParametreGenereaux";
 import RubriquePaie from "./pages/rubriquePaie/RubriquePaie";
 import RubriqueCategorie from "./pages/rubriqueCategorie/RubriqueCategorie";
 import MoisPaie from "./pages/paie/MoisPaie";
+import Bulletin from "./pages/paie/BulletinsMois";
+import MesBulletin from "./pages/paie/MesBulletins";
+
 
 function App() {
   return (
@@ -85,6 +88,10 @@ function App() {
 
           {/* Routes des mois paie*/}
           <Route path="/moispaie" element={<MoisPaie />} />
+
+          {/* Routes des bulletin de paie*/}
+          <Route path="/bulletin" element={<Bulletin />} />
+          <Route path="/mesbulletin" element={<MesBulletin />} />
 
 
 

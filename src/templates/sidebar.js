@@ -203,6 +203,11 @@ function Sidebar() {
                   <i className="ti-alert me-2" style={{ color: "#d43220ff" }}></i> Mois Paie
                 </Link>
               </li>
+              <li>
+                <Link to="/bulletin">
+                  <i className="ti-alert me-2" style={{ color: "#d43220ff" }}></i> Bulletin de paie
+                </Link>
+              </li>
 
             </>
           )}
@@ -229,7 +234,11 @@ function Sidebar() {
                   <i className="ti-alert me-2" style={{ color: "#d43220ff" }}></i> Sanction
                 </Link>
               </li>
-
+              <li>
+                <Link to="/mesbulletin">
+                  <i className="ti-alert me-2" style={{ color: "#d43220ff" }}></i> Mes bulletins
+                </Link>
+              </li>
             </>
           )}
         </ul>

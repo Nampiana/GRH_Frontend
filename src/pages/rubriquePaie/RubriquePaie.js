@@ -6,42 +6,31 @@ import useTemplateScripts from "../../utils/useTemplateScripts";
 import useRubriquePaie from "../../hook/rubriquePaie/useRubriquePaie";
 import useSociete from "../../hook/societe/societeHook";
 import ParametreGenereauxService from "../../services/parametreGenereaux/parametreGenereauxService";
-import RubriqueService from "../../services/rubriquePaie/rubriqueService";
 
 function RubriquePaie() {
     useTemplateScripts();
 
-    // --- User / rôles ---
     const [user, setUser] = useState({ roles: 1, societe: "" });
     useEffect(() => {
         const u = JSON.parse(localStorage.getItem("user"));
         if (u) setUser({ roles: u.roles, societe: u.societe });
     }, []);
 
-    // --- Hook rubriques ---
     const {
-        rubriques,
-        loading,
-        errorMsg,
-        setErrorMsg,
-        createRubrique,
-        updateRubrique,
-        deleteRubrique,
+        rubriques, loading, errorMsg, setErrorMsg,
+        createRubrique, updateRubrique, deleteRubrique,
     } = useRubriquePaie();
 
-    // --- Sociétés ---
     const { societe: societes, fetchSociete } = useSociete();
     useEffect(() => { fetchSociete(); }, [fetchSociete]);
 
-    // --- Paramètres généraux ---
-    const [params, setParams] = useState([]); // [{id, nomParametre, idSociete, pourcentage}]
+    const [params, setParams] = useState([]);
     useEffect(() => {
         ParametreGenereauxService.getAll()
             .then(res => setParams(Array.isArray(res.data) ? res.data : []))
             .catch(console.error);
     }, []);
 
-    // --- Filtrage / libellés ---
     const societeOptions = useMemo(() => {
         if (user.roles === 2) {
             const mine = societes.filter(s => s.id === user.societe);
@@ -54,14 +43,10 @@ function RubriquePaie() {
     const labelSociete = (id) =>
         (societes.find(s => s.id === id) || societeOptions.find(s => s.id === id))?.nomSociete || "N/A";
 
-    // params dispo selon société choisie dans le formulaire
     const paramsBySociete = (idSociete) => params.filter(p => p.idSociete === idSociete);
-
     const findParam = (id) => params.find(p => p.id === id);
 
-    // --- Filtre admin tableau ---
     const [societeFilter, setSocieteFilter] = useState("");
-
     const rows = useMemo(() => {
         return (rubriques || []).filter(r => {
             if (user.roles === 2 && r.idSociete !== user.societe) return false;
@@ -70,28 +55,20 @@ function RubriquePaie() {
         });
     }, [rubriques, user, societeFilter]);
 
-    // --- Modaux & sélection ---
     const [showModal, setShowModal] = useState(false);
     const [showDelete, setShowDelete] = useState(false);
     const [selected, setSelected] = useState(null);
 
-    // --- Formulaire ---
     const [code, setCode] = useState("");
     const [nomRubrique, setNomRubrique] = useState("");
     const [typeRubrique, setTypeRubrique] = useState("");
     const [operation, setOperation] = useState(1);
+    const [imposable, setImposable] = useState(true);   // ⇐ NEW
     const [idSociete, setIdSociete] = useState("");
-    const [idParametreGenereaux, setIdParametreGenereaux] = useState(""); // null/"" = manuel
+    const [idParametreGenereaux, setIdParametreGenereaux] = useState("");
 
-    // init rôle 2
-    useEffect(() => {
-        if (user.roles === 2) setIdSociete(user.societe || "");
-    }, [user]);
-
-    // reset param si la société change (éviter incohérence)
-    useEffect(() => {
-        setIdParametreGenereaux("");
-    }, [idSociete]);
+    useEffect(() => { if (user.roles === 2) setIdSociete(user.societe || ""); }, [user]);
+    useEffect(() => { setIdParametreGenereaux(""); }, [idSociete]);
 
     const resetForm = () => {
         setSelected(null);
@@ -99,6 +76,7 @@ function RubriquePaie() {
         setNomRubrique("");
         setTypeRubrique("");
         setOperation(1);
+        setImposable(true);
         setIdSociete(user.roles === 2 ? user.societe || "" : "");
         setIdParametreGenereaux("");
         setErrorMsg("");
@@ -111,24 +89,17 @@ function RubriquePaie() {
         setNomRubrique(r.nomRubrique || "");
         setTypeRubrique(r.typeRubrique || "");
         setOperation(typeof r.operation === "number" ? r.operation : 1);
+        setImposable(!!r.imposable);
         setIdSociete(r.idSociete || (user.roles === 2 ? user.societe || "" : ""));
         setIdParametreGenereaux(r.idParametreGenereaux || "");
         setErrorMsg("");
         setShowModal(true);
     };
     const openDelete = (r) => { setSelected(r); setShowDelete(true); };
-    const confirmDelete = () => {
-        if (!selected) return;
-        deleteRubrique(selected.id, () => {
-            setShowDelete(false);
-            setSelected(null);
-        });
-    };
+    const confirmDelete = () => { if (!selected) return; deleteRubrique(selected.id, () => { setShowDelete(false); setSelected(null); }); };
 
-    // validation
     const formValid = useMemo(() => {
         if (!code.trim() || !nomRubrique.trim() || !idSociete) return false;
-        // si paramétrée, vérifier que le param appartient à la même société
         if (idParametreGenereaux) {
             const p = findParam(idParametreGenereaux);
             if (!p || p.idSociete !== idSociete) return false;
@@ -142,15 +113,12 @@ function RubriquePaie() {
             nomRubrique: nomRubrique.trim(),
             typeRubrique: typeRubrique || null,
             operation: Number(operation),
+            imposable: !!imposable,                 // ⇐ NEW
             idSociete,
-            idParametreGenereaux: idParametreGenereaux || null, // null => manuel
+            idParametreGenereaux: idParametreGenereaux || null,
         };
-
-        if (selected) {
-            updateRubrique(selected.id, payload, () => { setShowModal(false); resetForm(); });
-        } else {
-            createRubrique(payload, () => { setShowModal(false); resetForm(); });
-        }
+        if (selected) updateRubrique(selected.id, payload, () => { setShowModal(false); resetForm(); });
+        else createRubrique(payload, () => { setShowModal(false); resetForm(); });
     };
 
     return (
@@ -165,7 +133,6 @@ function RubriquePaie() {
                                 <div className="main-body">
                                     <div className="page-wrapper">
                                         <div className="page-body">
-
                                             <div className="card p-3">
                                                 <div className="d-flex justify-content-between align-items-center mb-3">
                                                     <h5>Rubriques de Paie</h5>
@@ -174,19 +141,12 @@ function RubriquePaie() {
                                                     </button>
                                                 </div>
 
-                                                {/* Filtre admin */}
                                                 {user.roles === 1 && (
                                                     <div className="mb-3">
                                                         <label>Filtrer par Société :</label>
-                                                        <select
-                                                            className="form-control"
-                                                            value={societeFilter}
-                                                            onChange={(e) => setSocieteFilter(e.target.value)}
-                                                        >
+                                                        <select className="form-control" value={societeFilter} onChange={e => setSocieteFilter(e.target.value)}>
                                                             <option value="">Toutes les sociétés</option>
-                                                            {societeOptions.map(s => (
-                                                                <option key={s.id} value={s.id}>{s.nomSociete}</option>
-                                                            ))}
+                                                            {societeOptions.map(s => <option key={s.id} value={s.id}>{s.nomSociete}</option>)}
                                                         </select>
                                                     </div>
                                                 )}
@@ -207,6 +167,7 @@ function RubriquePaie() {
                                                                     <th>Nom</th>
                                                                     <th>Type</th>
                                                                     <th>Op</th>
+                                                                    <th>Imposable</th>
                                                                     <th>Mode</th>
                                                                     <th>Paramètre</th>
                                                                     <th>Taux (%)</th>
@@ -224,6 +185,7 @@ function RubriquePaie() {
                                                                             <td>{r.nomRubrique}</td>
                                                                             <td>{r.typeRubrique || "—"}</td>
                                                                             <td>{r.operation === 1 ? "+" : "-"}</td>
+                                                                            <td>{r.imposable ? "Oui" : "Non"}</td>
                                                                             <td>{param ? "Paramètre" : "Manuel"}</td>
                                                                             <td>{param ? param.nomParametre : "—"}</td>
                                                                             <td>{param ? param.pourcentage : "—"}</td>
@@ -244,7 +206,6 @@ function RubriquePaie() {
                                                     </div>
                                                 )}
                                             </div>
-
                                         </div>
                                     </div>
                                 </div>
@@ -292,11 +253,7 @@ function RubriquePaie() {
                                 <div className="row">
                                     <div className="col-md-4">
                                         <label>Type</label>
-                                        <select
-                                            className="form-control mb-2"
-                                            value={typeRubrique}
-                                            onChange={(e) => setTypeRubrique(e.target.value)}
-                                        >
+                                        <select className="form-control mb-2" value={typeRubrique} onChange={(e) => setTypeRubrique(e.target.value)}>
                                             <option value="">—</option>
                                             <option value="I">I (Imposable)</option>
                                             <option value="C">C (Cotisation)</option>
@@ -305,46 +262,39 @@ function RubriquePaie() {
                                     </div>
                                     <div className="col-md-4">
                                         <label>Opération</label>
-                                        <select
-                                            className="form-control mb-2"
-                                            value={operation}
-                                            onChange={(e) => setOperation(Number(e.target.value))}
-                                        >
+                                        <select className="form-control mb-2" value={operation} onChange={(e) => setOperation(Number(e.target.value))}>
                                             <option value={1}>+ (Crédit)</option>
                                             <option value={0}>- (Débit)</option>
                                         </select>
                                     </div>
                                     <div className="col-md-4">
-                                        <label>Société</label>
-                                        <select
-                                            className="form-control mb-2"
-                                            value={idSociete}
-                                            onChange={(e) => setIdSociete(e.target.value)}
-                                            disabled={user.roles === 2}
-                                        >
-                                            <option value="">Sélectionner une société</option>
-                                            {societeOptions.map(s => (
-                                                <option key={s.id} value={s.id}>{s.nomSociete}</option>
-                                            ))}
+                                        <label>Imposable</label>
+                                        <select className="form-control mb-2" value={imposable ? "1" : "0"} onChange={(e) => setImposable(e.target.value === "1")}>
+                                            <option value="1">Oui</option>
+                                            <option value="0">Non</option>
                                         </select>
                                     </div>
                                 </div>
 
-                                {/* Paramètre généraux (optionnel) */}
                                 <div className="row">
                                     <div className="col-md-6">
-                                        <label>Paramètre généraux (pourcentage % du SB)</label>
+                                        <label>Société</label>
+                                        <select className="form-control mb-2" value={idSociete} onChange={(e) => setIdSociete(e.target.value)} disabled={user.roles === 2}>
+                                            <option value="">Sélectionner une société</option>
+                                            {societeOptions.map(s => <option key={s.id} value={s.id}>{s.nomSociete}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="col-md-6">
+                                        <label>Paramètre généraux (% du SB)</label>
                                         <select
                                             className="form-control"
                                             value={idParametreGenereaux}
                                             onChange={(e) => setIdParametreGenereaux(e.target.value)}
-                                            disabled={!idSociete} // il faut d'abord choisir la société
+                                            disabled={!idSociete}
                                         >
                                             <option value="">— Aucun (manuel) —</option>
                                             {paramsBySociete(idSociete).map(p => (
-                                                <option key={p.id} value={p.id}>
-                                                    {p.nomParametre} — {p.pourcentage}%
-                                                </option>
+                                                <option key={p.id} value={p.id}>{p.nomParametre} — {p.pourcentage}%</option>
                                             ))}
                                         </select>
                                     </div>
