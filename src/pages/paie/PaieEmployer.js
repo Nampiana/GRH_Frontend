@@ -9,6 +9,7 @@ import MoisPaieService from "../../services/moispaie/moisPaieService";
 import PaieMoisService from "../../services/paieMois/paieMoisService";
 import IndividuServices from "../../services/individu/individuService";
 import CategorieServices from "../../services/categorie/categorie";
+import useRubriquePaie from "../../hook/rubriquePaie/useRubriquePaie";
 
 function PaieEmployer() {
     useTemplateScripts();
@@ -22,6 +23,9 @@ function PaieEmployer() {
     const [individusById, setIndividusById] = useState({});
     const [categoriesById, setCategoriesById] = useState({});
     const [saisies, setSaisies] = useState([]);
+
+    // Récupérer toutes les rubriques de paie (pour les boutons dynamiques)
+    const { rubriques: allRubriques } = useRubriquePaie();
 
     const toArray = (data) => (Array.isArray(data) ? data : data?.content || []);
 
@@ -68,17 +72,19 @@ function PaieEmployer() {
         });
     }, [employers, individusById]);
 
+    // Ajout d'une ligne manuelle
     const addLigne = (code, libelle, operation) => {
         setSaisies((prev) => [...prev, { code, libelle, operation, montant: 0 }]);
     };
 
+    // Mettre à jour le montant d'une ligne
     const updateMontant = (idx, val) => {
         const copy = [...saisies];
         copy[idx].montant = Number(val || 0);
         setSaisies(copy);
     };
 
-    // NEW: retirer une ligne
+    // Retirer une ligne
     const removeLigne = (idx) => {
         setSaisies((prev) => prev.filter((_, i) => i !== idx));
     };
@@ -96,6 +102,31 @@ function PaieEmployer() {
         [mois, moisPaieId]
     );
     const isClosed = selectedMois?.statut === "CLOSED";
+
+    // Employé sélectionné (pour connaître sa société)
+    const selectedEmployer = useMemo(
+        () => employers.find((e) => e.id === idEmployer),
+        [employers, idEmployer]
+    );
+
+    // Rubriques MANUELLES (sans idParametreGenereaux) pour la même société que l'employé
+    const rubriquesManuelles = useMemo(() => {
+        if (!allRubriques || allRubriques.length === 0) return [];
+        const idSoc = selectedEmployer?.idSociete;
+        return (allRubriques || [])
+            .filter((r) => !r.idParametreGenereaux) // uniquement saisies manuelles
+            .filter((r) => !idSoc || r.idSociete === idSoc) // même société que l'employé
+            .map((r) => ({
+                id: r.id,
+                code: r.code,
+                libelle: r.nomRubrique,
+                operation: typeof r.operation === "number" ? r.operation : 1,
+            }))
+            .sort((a, b) => a.code.localeCompare(b.code));
+    }, [allRubriques, selectedEmployer]);
+
+    // Savoir si une rubrique est déjà ajoutée dans les saisies
+    const isInSaisies = (code) => saisies.some((s) => s.code === code);
 
     const handleCalculer = () => {
         if (!idEmployer || !moisPaieId || isClosed) return;
@@ -194,36 +225,28 @@ function PaieEmployer() {
                                             <div className="card p-3 mb-3">
                                                 <div className="d-flex align-items-center justify-content-between">
                                                     <h6>Saisies manuelles du mois</h6>
-                                                    <div className="btn-group">
-                                                        {/* <button className="btn btn-outline-primary btn-sm" onClick={() => addLigne("SB", "Salaire de base", 1)}>+ SB</button> */}
-                                                        <button
-                                                            className="btn btn-outline-primary btn-sm"
-                                                            onClick={() => addLigne("PRIME", "Prime", 1)}
-                                                            disabled={isClosed}
-                                                        >
-                                                            + PRIME
-                                                        </button>
-                                                        <button
-                                                            className="btn btn-outline-primary btn-sm"
-                                                            onClick={() => addLigne("HS", "Heures sup", 1)}
-                                                            disabled={isClosed}
-                                                        >
-                                                            + HS
-                                                        </button>
-                                                        <button
-                                                            className="btn btn-outline-primary btn-sm"
-                                                            onClick={() => addLigne("TP", "Transport", 1)}
-                                                            disabled={isClosed}
-                                                        >
-                                                            + Transport
-                                                        </button>
-                                                        <button
-                                                            className="btn btn-outline-danger btn-sm"
-                                                            onClick={() => addLigne("AVANCE", "Avance", 0)}
-                                                            disabled={isClosed}
-                                                        >
-                                                            - AVANCE
-                                                        </button>
+                                                    <div className="d-flex flex-wrap gap-2">
+                                                        {rubriquesManuelles.length === 0 ? (
+                                                            <span className="text-muted">
+                                                                Aucune rubrique manuelle disponible pour cette société.
+                                                            </span>
+                                                        ) : (
+                                                            rubriquesManuelles.map((r) => (
+                                                                <button
+                                                                    key={r.id}
+                                                                    className={`btn btn-sm ${r.operation === 1
+                                                                            ? "btn-outline-primary"
+                                                                            : "btn-outline-danger"
+                                                                        }`}
+                                                                    onClick={() => addLigne(r.code, r.libelle, r.operation)}
+                                                                    disabled={isClosed || isInSaisies(r.code)}
+                                                                    title={r.libelle}
+                                                                >
+                                                                    {r.operation === 1 ? "+ " : "- "}
+                                                                    {r.code}
+                                                                </button>
+                                                            ))
+                                                        )}
                                                     </div>
                                                 </div>
 
@@ -254,9 +277,7 @@ function PaieEmployer() {
                                                                                 type="number"
                                                                                 className="form-control form-control-sm"
                                                                                 value={l.montant}
-                                                                                onChange={(e) =>
-                                                                                    updateMontant(idx, e.target.value)
-                                                                                }
+                                                                                onChange={(e) => updateMontant(idx, e.target.value)}
                                                                                 disabled={isClosed}
                                                                             />
                                                                         </td>
@@ -311,9 +332,7 @@ function PaieEmployer() {
                                                                         <td>{l.libelle}</td>
                                                                         <td>{l.operation === 1 ? "+" : "-"}</td>
                                                                         <td>{l.taux ?? ""}</td>
-                                                                        <td>
-                                                                            {Number(l.montant).toLocaleString("fr-FR")}
-                                                                        </td>
+                                                                        <td>{Number(l.montant).toLocaleString("fr-FR")}</td>
                                                                     </tr>
                                                                 ))}
                                                             </tbody>
@@ -323,9 +342,7 @@ function PaieEmployer() {
                                                                         Total +
                                                                     </th>
                                                                     <th>
-                                                                        {Number(bulletin.totalPlus).toLocaleString(
-                                                                            "fr-FR"
-                                                                        )}
+                                                                        {Number(bulletin.totalPlus).toLocaleString("fr-FR")}
                                                                     </th>
                                                                 </tr>
                                                                 <tr>
@@ -333,9 +350,7 @@ function PaieEmployer() {
                                                                         Total -
                                                                     </th>
                                                                     <th>
-                                                                        {Number(bulletin.totalMoins).toLocaleString(
-                                                                            "fr-FR"
-                                                                        )}
+                                                                        {Number(bulletin.totalMoins).toLocaleString("fr-FR")}
                                                                     </th>
                                                                 </tr>
                                                                 <tr className="table-info">
@@ -343,9 +358,7 @@ function PaieEmployer() {
                                                                         Brut imposable
                                                                     </th>
                                                                     <th>
-                                                                        {Number(
-                                                                            bulletin.brutImposable ?? 0
-                                                                        ).toLocaleString("fr-FR")}
+                                                                        {Number(bulletin.brutImposable ?? 0).toLocaleString("fr-FR")}
                                                                     </th>
                                                                 </tr>
                                                                 {bulletin.irsa != null && (
@@ -354,9 +367,7 @@ function PaieEmployer() {
                                                                             IRSA (déjà dans les -)
                                                                         </th>
                                                                         <th>
-                                                                            {Number(bulletin.irsa).toLocaleString(
-                                                                                "fr-FR"
-                                                                            )}
+                                                                            {Number(bulletin.irsa).toLocaleString("fr-FR")}
                                                                         </th>
                                                                     </tr>
                                                                 )}
@@ -365,9 +376,7 @@ function PaieEmployer() {
                                                                         Brut
                                                                     </th>
                                                                     <th>
-                                                                        {Number(bulletin.brut).toLocaleString(
-                                                                            "fr-FR"
-                                                                        )}
+                                                                        {Number(bulletin.brut).toLocaleString("fr-FR")}
                                                                     </th>
                                                                 </tr>
                                                                 <tr className="table-success">
@@ -375,9 +384,7 @@ function PaieEmployer() {
                                                                         Net à payer
                                                                     </th>
                                                                     <th>
-                                                                        {Number(bulletin.netAPayer).toLocaleString(
-                                                                            "fr-FR"
-                                                                        )}
+                                                                        {Number(bulletin.netAPayer).toLocaleString("fr-FR")}
                                                                     </th>
                                                                 </tr>
                                                             </tfoot>
