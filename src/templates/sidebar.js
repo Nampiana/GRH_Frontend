@@ -118,6 +118,14 @@ function Sidebar() {
             { to: "/bulletin", icon: "ti-receipt", label: "Bulletin de paie", color: "#f59e0b" },
           ],
         },
+        {
+          key: "turnover",
+          label: "Turnover",
+          accent: "#8b5cf6", // violet
+          items: [
+            { to: "/turnover", icon: "ti-pie-chart", label: "Analyse Turnover", color: "#8b5cf6" },
+          ],
+        },
       ];
     }
 

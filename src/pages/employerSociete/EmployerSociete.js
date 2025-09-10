@@ -42,7 +42,8 @@ function EmployerSociete() {
     idService: "",
     idPoste: "",
     idCategorie: "",
-    salaireBase: "", // ⇐ NEW
+    salaireBase: "",
+    dateDebauche: "",
     role: 3
   });
 
@@ -117,7 +118,8 @@ function EmployerSociete() {
       idService: "",
       idPoste: "",
       idCategorie: "",
-      salaireBase: "", // ⇐ reset
+      salaireBase: "",
+      dateDebauche: "",
       role: user.roles === 1 ? 2 : 3
     });
     setSelectedEmployer(null);
@@ -137,7 +139,8 @@ function EmployerSociete() {
         idService: formData.idService,
         idPoste: formData.idPoste,
         idCategorie: formData.idCategorie,
-        salaireBase: formData.salaireBase === "" ? null : Number(formData.salaireBase) // ⇐ NEW
+        salaireBase: formData.salaireBase === "" ? null : Number(formData.salaireBase),
+        dateDebauche: formData.dateDebauche || null
       },
       nom: formData.nom,
       prenom: formData.prenom,
@@ -199,7 +202,8 @@ function EmployerSociete() {
       idService: employer.idService,
       idPoste: employer.idPoste,
       idCategorie: employer.idCategorie,
-      salaireBase: employer.salaireBase ?? "", // ⇐ NEW
+      salaireBase: employer.salaireBase ?? "",
+      dateDebauche: employer.dateDebauche ? employer.dateDebauche.split("T")[0] : "",
       role: userRole
     });
     setShowModal(true);
@@ -384,6 +388,7 @@ function EmployerSociete() {
                               <th>Rôles</th>
                               <th>Date d'embauche</th>
                               <th>Salaire de base</th> {/* ⇐ NEW */}
+                              <th>Date de débauche</th>
                               <th>Actions</th>
                             </tr>
                           </thead>
@@ -435,6 +440,7 @@ function EmployerSociete() {
                                     </td>
                                     <td>{e.dateEmbauche ? new Date(e.dateEmbauche).toLocaleDateString() : "N/A"}</td>
                                     <td>{formatAriary(e.salaireBase)}</td> {/* ⇐ NEW */}
+                                    <td>{e.dateDebauche ? new Date(e.dateDebauche).toLocaleDateString() : "Actif"}</td>
                                     <td>
                                       <button className="btn btn-warning btn-sm me-2" onClick={() => handleEdit(e)}>
                                         Modifier
@@ -590,6 +596,17 @@ function EmployerSociete() {
                           <small className="text-muted">
                             {formData.salaireBase !== "" ? `Aperçu : ${formatAriary(formData.salaireBase)}` : ""}
                           </small>
+                        </div>
+                        <div>
+                          <label className="mt-2">Date de débauche</label>
+                          <input
+                            type="date"
+                            className="form-control"
+                            name="dateDebauche"
+                            value={formData.dateDebauche}
+                            onChange={handleInputChange}
+                          />
+                          <small className="text-muted">Laisser vide si l'employé est encore actif</small>
                         </div>
                       </div>
                       <div className="modal-footer">
