@@ -8,6 +8,8 @@ import useRubriqueCategorie from "../../hook/rubriqueCategorie/useRubriqueCatego
 // ⚠️ On réutilise tes services existants
 import CategorieServices from "../../services/categorie/categorie"; // ton service catégories
 import RubriqueService from "../../services/rubriquePaie/rubriqueService"; // ton service rubriques
+import SocieteService from "../../services/societe/societeService";
+
 
 function RubriqueCategorie() {
     useTemplateScripts();
@@ -34,19 +36,23 @@ function RubriqueCategorie() {
     const [categories, setCategories] = useState([]); // [{id, nomCategorie?, idSociete? ...}]
     const [rubriques, setRubriques] = useState([]);   // [{id, code, nomRubrique, idSociete, ...}]
     const [refLoading, setRefLoading] = useState(false);
+    const [societes, setSocietes] = useState([]);
 
     useEffect(() => {
         setRefLoading(true);
         Promise.all([
             CategorieServices.getAll?.() || Promise.resolve({ data: [] }),
-            RubriqueService.getAll()
+            RubriqueService.getAll(),
+            SocieteService.getAll?.() || Promise.resolve({ data: [] })
         ])
-            .then(([catRes, rubRes]) => {
+            .then(([catRes, rubRes, socRes]) => {
                 // Supporte array ou {content:[]}
                 const cats = Array.isArray(catRes.data) ? catRes.data : (catRes.data?.content || []);
                 const rubs = Array.isArray(rubRes.data) ? rubRes.data : [];
+                const socs = Array.isArray(socRes.data) ? socRes.data : (socRes.data?.content || []);
                 setCategories(cats);
                 setRubriques(rubs);
+                setSocietes(socs);
             })
             .catch((err) => console.error(err))
             .finally(() => setRefLoading(false));
@@ -65,6 +71,12 @@ function RubriqueCategorie() {
         return m;
     }, [rubriques]);
 
+
+    const societeById = useMemo(() => {                 // <- NEW
+        const m = new Map();
+        societes.forEach(s => m.set(s.id, s));
+        return m;
+    }, [societes]);
     // --- Filtrage par rôle 2: n'afficher que les associations dont la rubrique appartient à sa société ---
     const [categorieFilter, setCategorieFilter] = useState("");
     const rows = useMemo(() => {
@@ -86,6 +98,12 @@ function RubriqueCategorie() {
         if (!r) return "N/A";
         const name = r.nomRubrique || r.nom || r.name || "";
         return r.code ? `${r.code}${name ? " — " + name : ""}` : (name || r.id);
+    };
+
+    const labelSociete = (s) => {
+        if (!s) return "—";
+        // adapte selon ton modèle: nomSociete / raisonSociale / name ...
+        return s.nomSociete || s.raisonSociale || s.nom || s.name || s.id;
     };
 
     // --- Formulaire ---
@@ -220,7 +238,7 @@ function RubriqueCategorie() {
                                                                             <td>{i + 1}</td>
                                                                             <td>{labelCategorie(c)}</td>
                                                                             <td>{labelRubrique(r)}</td>
-                                                                            <td>{r?.idSociete || "—"}</td>
+                                                                            <td>{labelSociete(societeById.get(r?.idSociete))}</td>
                                                                             <td>
                                                                                 <button className="btn btn-warning btn-sm me-2" onClick={() => openEdit(rc)}>
                                                                                     <i className="icofont icofont-edit"></i> Modifier
