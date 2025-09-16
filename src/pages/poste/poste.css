@@ -1,0 +1,53 @@
+/* Styles personnalisés pour la page Poste */
+
+/* Effet d'ombre subtile sur la carte */
+.card.shadow-sm {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+}
+
+/* Style de la table avec lignes zébrées */
+.table.table-striped tbody tr:nth-of-type(odd) {
+    background-color: #f8f9fa; /* Gris très clair pour les lignes impaires */
+}
+
+/* Enlève les bordures de la table pour un look plus épuré */
+.table.table-borderless th,
+.table.table-borderless td {
+    border: none;
+}
+
+/* Style des boutons d'action */
+.btn-outline-warning {
+    color: #ffc107;
+    border-color: #ffc107;
+}
+
+.btn-outline-warning:hover {
+    background-color: #ffc107;
+    color: #fff;
+}
+
+.btn-outline-danger {
+    color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-outline-danger:hover {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+/* Style pour un message de tableau vide */
+.p.lead {
+    font-size: 1.25rem;
+    color: #6c757d;
+}
+
+/* Styles pour les modaux */
+.modal-header.bg-primary {
+    background-color: #007bff !important;
+}
+
+.modal-header.bg-danger {
+    background-color: #dc3545 !important;
+}

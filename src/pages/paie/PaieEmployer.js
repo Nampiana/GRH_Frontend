@@ -12,413 +12,476 @@ import CategorieServices from "../../services/categorie/categorie";
 import useRubriquePaie from "../../hook/rubriquePaie/useRubriquePaie";
 
 function PaieEmployer() {
-    useTemplateScripts();
-    const { bulletin, loading, calculer, enregistrer, setBulletin } = usePaie();
+  useTemplateScripts();
+  const { bulletin, loading, calculer, enregistrer, setBulletin } = usePaie();
 
-    const [employers, setEmployers] = useState([]);
-    const [mois, setMois] = useState([]);
-    const [idEmployer, setIdEmployer] = useState("");
-    const [moisPaieId, setMoisPaieId] = useState("");
+  const [employers, setEmployers] = useState([]);
+  const [mois, setMois] = useState([]);
+  const [idEmployer, setIdEmployer] = useState("");
+  const [moisPaieId, setMoisPaieId] = useState("");
 
-    const [individusById, setIndividusById] = useState({});
-    const [categoriesById, setCategoriesById] = useState({});
-    const [saisies, setSaisies] = useState([]);
+  const [individusById, setIndividusById] = useState({});
+  const [categoriesById, setCategoriesById] = useState({});
+  const [saisies, setSaisies] = useState([]);
 
-    // Récupérer toutes les rubriques de paie (pour les boutons dynamiques)
-    const { rubriques: allRubriques } = useRubriquePaie();
+  // Récupérer toutes les rubriques de paie (pour les boutons dynamiques)
+  const { rubriques: allRubriques } = useRubriquePaie();
 
-    const toArray = (data) => (Array.isArray(data) ? data : data?.content || []);
+  const toArray = (data) => (Array.isArray(data) ? data : data?.content || []);
 
-    useEffect(() => {
-        EmployerSocieteService.getAll()
-            .then((r) => setEmployers(toArray(r.data)))
-            .catch(console.error);
-        MoisPaieService.getAll()
-            .then((r) => setMois(toArray(r.data)))
-            .catch(console.error);
+  useEffect(() => {
+    EmployerSocieteService.getAll()
+      .then((r) => setEmployers(toArray(r.data)))
+      .catch(console.error);
+    MoisPaieService.getAll()
+      .then((r) => setMois(toArray(r.data)))
+      .catch(console.error);
 
-        IndividuServices.getAll()
-            .then((res) => {
-                const arr = toArray(res.data);
-                const map = {};
-                arr.forEach((x) => {
-                    if (x?.id) map[x.id] = x;
-                });
-                setIndividusById(map);
-            })
-            .catch(console.error);
-
-        CategorieServices.getAll()
-            .then((res) => {
-                const arr = toArray(res.data);
-                const map = {};
-                arr.forEach((x) => {
-                    if (x?.id) map[x.id] = x;
-                });
-                setCategoriesById(map);
-            })
-            .catch(console.error);
-    }, []);
-
-    const employersSorted = useMemo(() => {
-        const withNames = employers.map((e) => {
-            const ind = individusById[e.idIndividue] || {};
-            return { ...e, _nom: ind.nom || "", _prenom: ind.prenom || "" };
+    IndividuServices.getAll()
+      .then((res) => {
+        const arr = toArray(res.data);
+        const map = {};
+        arr.forEach((x) => {
+          if (x?.id) map[x.id] = x;
         });
-        return withNames.sort((a, b) => {
-            const an = `${a._nom} ${a._prenom}`.trim().toLowerCase();
-            const bn = `${b._nom} ${b._prenom}`.trim().toLowerCase();
-            return an.localeCompare(bn);
+        setIndividusById(map);
+      })
+      .catch(console.error);
+
+    CategorieServices.getAll()
+      .then((res) => {
+        const arr = toArray(res.data);
+        const map = {};
+        arr.forEach((x) => {
+          if (x?.id) map[x.id] = x;
         });
-    }, [employers, individusById]);
+        setCategoriesById(map);
+      })
+      .catch(console.error);
+  }, []);
 
-    // Ajout d'une ligne manuelle
-    const addLigne = (code, libelle, operation) => {
-        setSaisies((prev) => [...prev, { code, libelle, operation, montant: 0 }]);
+  const employersSorted = useMemo(() => {
+    const withNames = employers.map((e) => {
+      const ind = individusById[e.idIndividue] || {};
+      return { ...e, _nom: ind.nom || "", _prenom: ind.prenom || "" };
+    });
+    return withNames.sort((a, b) => {
+      const an = `${a._nom} ${a._prenom}`.trim().toLowerCase();
+      const bn = `${b._nom} ${b._prenom}`.trim().toLowerCase();
+      return an.localeCompare(bn);
+    });
+  }, [employers, individusById]);
+
+  // Ajout d'une ligne manuelle (SB exclu)
+  const addLigne = (code, libelle, operation) => {
+    if ((code || "").toUpperCase() === "SB") return; // sécurité
+    setSaisies((prev) => [...prev, { code, libelle, operation, montant: 0 }]);
+  };
+
+  // Mettre à jour le montant d'une ligne
+  const updateMontant = (idx, val) => {
+    const copy = [...saisies];
+    copy[idx].montant = Number(val || 0);
+    setSaisies(copy);
+  };
+
+  // Retirer une ligne
+  const removeLigne = (idx) => {
+    setSaisies((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  // Filtrer les mois par société de l'employé sélectionné
+  const moisFiltres = useMemo(() => {
+    if (!idEmployer) return mois;
+    const emp = employers.find((e) => e.id === idEmployer);
+    if (!emp) return mois;
+    return mois.filter((m) => !m.idSociete || m.idSociete === emp.idSociete);
+  }, [mois, idEmployer, employers]);
+
+  const selectedMois = useMemo(
+    () => mois.find((m) => m.id === moisPaieId),
+    [mois, moisPaieId]
+  );
+  const isClosed = selectedMois?.statut === "CLOSED";
+
+  // Employé sélectionné (pour connaître sa société / statut / SB)
+  const selectedEmployer = useMemo(
+    () => employers.find((e) => e.id === idEmployer),
+    [employers, idEmployer]
+  );
+  const isTerminated = !!selectedEmployer?.dateDebauche;
+
+  // Rubriques MANUELLES (sans idParametreGenereaux), même société, et SB exclu
+  const rubriquesManuelles = useMemo(() => {
+    if (!allRubriques || allRubriques.length === 0) return [];
+    const idSoc = selectedEmployer?.idSociete;
+    return (allRubriques || [])
+      .filter((r) => !r.idParametreGenereaux)
+      .filter((r) => (r.code || "").toUpperCase() !== "SB") // ⛔ exclure SB
+      .filter((r) => !idSoc || r.idSociete === idSoc)
+      .map((r) => ({
+        id: r.id,
+        code: r.code,
+        libelle: r.nomRubrique,
+        operation: typeof r.operation === "number" ? r.operation : 1,
+      }))
+      .sort((a, b) => a.code.localeCompare(b.code));
+  }, [allRubriques, selectedEmployer]);
+
+  // Savoir si une rubrique est déjà ajoutée dans les saisies
+  const isInSaisies = (code) => saisies.some((s) => s.code === code);
+
+  const handleCalculer = () => {
+    if (!idEmployer || !moisPaieId || isClosed || isTerminated) return;
+
+    const bodyUpsert = {
+      idEmployer,
+      moisPaieId,
+      lignes: saisies.map((s) => ({
+        code: s.code,
+        montant: s.montant,
+        note: s.libelle,
+      })),
     };
 
-    // Mettre à jour le montant d'une ligne
-    const updateMontant = (idx, val) => {
-        const copy = [...saisies];
-        copy[idx].montant = Number(val || 0);
-        setSaisies(copy);
-    };
+    PaieMoisService.upsert(bodyUpsert)
+      .then(() => calculer(idEmployer, moisPaieId))
+      .catch((err) => {
+        const msg =
+          err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          err?.message ||
+          "Erreur lors de l'upsert/calcul";
+        alert(msg);
+      });
+  };
 
-    // Retirer une ligne
-    const removeLigne = (idx) => {
-        setSaisies((prev) => prev.filter((_, i) => i !== idx));
-    };
-
-    // Filtrer les mois par société de l'employé sélectionné
-    const moisFiltres = useMemo(() => {
-        if (!idEmployer) return mois;
-        const emp = employers.find((e) => e.id === idEmployer);
-        if (!emp) return mois;
-        return mois.filter((m) => !m.idSociete || m.idSociete === emp.idSociete);
-    }, [mois, idEmployer, employers]);
-
-    const selectedMois = useMemo(
-        () => mois.find((m) => m.id === moisPaieId),
-        [mois, moisPaieId]
+  const handleEnregistrer = () => {
+    if (!bulletin || isClosed) return;
+    enregistrer(
+      { idEmployer, moisPaieId, lignes: bulletin.lignes },
+      () => alert("Bulletin enregistré !")
     );
-    const isClosed = selectedMois?.statut === "CLOSED";
+  };
 
-    // Employé sélectionné (pour connaître sa société)
-    const selectedEmployer = useMemo(
-        () => employers.find((e) => e.id === idEmployer),
-        [employers, idEmployer]
-    );
+  const renderEmployerOptionLabel = (e) => {
+    const ind = individusById[e.idIndividue];
+    const cat = categoriesById[e.idCategorie];
+    const nomPrenom = ind
+      ? `${ind.nom || ""} ${ind.prenom || ""}`.trim()
+      : e.idIndividue;
+    const catLabel = cat ? cat.nomCategorie : "N/A";
+    return `${nomPrenom} — ${catLabel}`;
+  };
 
-    // Rubriques MANUELLES (sans idParametreGenereaux) pour la même société que l'employé
-    const rubriquesManuelles = useMemo(() => {
-        if (!allRubriques || allRubriques.length === 0) return [];
-        const idSoc = selectedEmployer?.idSociete;
-        return (allRubriques || [])
-            .filter((r) => !r.idParametreGenereaux) // uniquement saisies manuelles
-            .filter((r) => !idSoc || r.idSociete === idSoc) // même société que l'employé
-            .map((r) => ({
-                id: r.id,
-                code: r.code,
-                libelle: r.nomRubrique,
-                operation: typeof r.operation === "number" ? r.operation : 1,
-            }))
-            .sort((a, b) => a.code.localeCompare(b.code));
-    }, [allRubriques, selectedEmployer]);
+  return (
+    <div id="pcoded" className="pcoded">
+      <div className="pcoded-container navbar-wrapper">
+        <Topbar />
+        <div className="pcoded-main-container">
+          <div className="pcoded-wrapper">
+            <Sidebar />
+            <div className="pcoded-content">
+              <div className="pcoded-inner-content">
+                <div className="main-body">
+                  <div className="page-wrapper">
+                    <div className="page-body">
+                      <div className="card p-3 mb-3">
+                        <h5>Calcul de paie par employé</h5>
 
-    // Savoir si une rubrique est déjà ajoutée dans les saisies
-    const isInSaisies = (code) => saisies.some((s) => s.code === code);
+                        <div className="row g-2 mt-2">
+                          <div className="col-md-5">
+                            <label>Employé</label>
+                            <select
+                              className="form-control"
+                              value={idEmployer}
+                              onChange={(e) => {
+                                setIdEmployer(e.target.value);
+                                setBulletin(null);
+                              }}
+                            >
+                              <option value="">-- Sélectionner --</option>
+                              {employersSorted.map((e) => (
+                                <option key={e.id} value={e.id}>
+                                  {renderEmployerOptionLabel(e)}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
 
-    const handleCalculer = () => {
-        if (!idEmployer || !moisPaieId || isClosed) return;
-
-        const bodyUpsert = {
-            idEmployer,
-            moisPaieId,
-            lignes: saisies.map((s) => ({
-                code: s.code,
-                montant: s.montant,
-                note: s.libelle,
-            })),
-        };
-
-        PaieMoisService.upsert(bodyUpsert)
-            .then(() => calculer(idEmployer, moisPaieId))
-            .catch(console.error);
-    };
-
-    const handleEnregistrer = () => {
-        if (!bulletin || isClosed) return;
-        enregistrer(
-            { idEmployer, moisPaieId, lignes: bulletin.lignes },
-            () => alert("Bulletin enregistré !")
-        );
-    };
-
-    const renderEmployerOptionLabel = (e) => {
-        const ind = individusById[e.idIndividue];
-        const cat = categoriesById[e.idCategorie];
-        const nomPrenom = ind
-            ? `${ind.nom || ""} ${ind.prenom || ""}`.trim()
-            : e.idIndividue;
-        const catLabel = cat ? cat.nomCategorie : "N/A";
-        return `${nomPrenom} — ${catLabel}`;
-    };
-
-    return (
-        <div id="pcoded" className="pcoded">
-            <div className="pcoded-container navbar-wrapper">
-                <Topbar />
-                <div className="pcoded-main-container">
-                    <div className="pcoded-wrapper">
-                        <Sidebar />
-                        <div className="pcoded-content">
-                            <div className="pcoded-inner-content">
-                                <div className="main-body">
-                                    <div className="page-wrapper">
-                                        <div className="page-body">
-                                            <div className="card p-3 mb-3">
-                                                <h5>Calcul de paie par employé</h5>
-
-                                                <div className="row g-2 mt-2">
-                                                    <div className="col-md-5">
-                                                        <label>Employé</label>
-                                                        <select
-                                                            className="form-control"
-                                                            value={idEmployer}
-                                                            onChange={(e) => setIdEmployer(e.target.value)}
-                                                        >
-                                                            <option value="">-- Sélectionner --</option>
-                                                            {employersSorted.map((e) => (
-                                                                <option key={e.id} value={e.id}>
-                                                                    {renderEmployerOptionLabel(e)}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-
-                                                    <div className="col-md-4">
-                                                        <label>Mois de paie</label>
-                                                        <select
-                                                            className="form-control"
-                                                            value={moisPaieId}
-                                                            onChange={(e) => setMoisPaieId(e.target.value)}
-                                                        >
-                                                            <option value="">-- Sélectionner --</option>
-                                                            {moisFiltres.map((m) => (
-                                                                <option key={m.id} value={m.id}>
-                                                                    {(m.periode || "").slice(0, 7)}{" "}
-                                                                    {m.statut === "CLOSED" ? " (Clôturé)" : ""}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                                {isClosed && (
-                                                    <div className="alert alert-warning mt-2 mb-0">
-                                                        Ce mois est <b>clôturé</b> : calcul et enregistrement
-                                                        désactivés.
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Saisies manuelles rapides */}
-                                            <div className="card p-3 mb-3">
-                                                <div className="d-flex align-items-center justify-content-between">
-                                                    <h6>Saisies manuelles du mois</h6>
-                                                    <div className="d-flex flex-wrap gap-2">
-                                                        {rubriquesManuelles.length === 0 ? (
-                                                            <span className="text-muted">
-                                                                Aucune rubrique manuelle disponible pour cette société.
-                                                            </span>
-                                                        ) : (
-                                                            rubriquesManuelles.map((r) => (
-                                                                <button
-                                                                    key={r.id}
-                                                                    className={`btn btn-sm ${r.operation === 1
-                                                                            ? "btn-outline-primary"
-                                                                            : "btn-outline-danger"
-                                                                        }`}
-                                                                    onClick={() => addLigne(r.code, r.libelle, r.operation)}
-                                                                    disabled={isClosed || isInSaisies(r.code)}
-                                                                    title={r.libelle}
-                                                                >
-                                                                    {r.operation === 1 ? "+ " : "- "}
-                                                                    {r.code}
-                                                                </button>
-                                                            ))
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                {saisies.length === 0 ? (
-                                                    <p className="text-muted mt-2">
-                                                        Aucune ligne. Ajoutez des lignes au besoin.
-                                                    </p>
-                                                ) : (
-                                                    <div className="table-responsive mt-2">
-                                                        <table className="table table-sm">
-                                                            <thead>
-                                                                <tr>
-                                                                    <th>Code</th>
-                                                                    <th>Libellé</th>
-                                                                    <th>Op</th>
-                                                                    <th>Montant</th>
-                                                                    <th style={{ width: 1 }}>Actions</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                {saisies.map((l, idx) => (
-                                                                    <tr key={idx}>
-                                                                        <td>{l.code}</td>
-                                                                        <td>{l.libelle}</td>
-                                                                        <td>{l.operation === 1 ? "+" : "-"}</td>
-                                                                        <td>
-                                                                            <input
-                                                                                type="number"
-                                                                                className="form-control form-control-sm"
-                                                                                value={l.montant}
-                                                                                onChange={(e) => updateMontant(idx, e.target.value)}
-                                                                                disabled={isClosed}
-                                                                            />
-                                                                        </td>
-                                                                        <td className="text-nowrap">
-                                                                            <button
-                                                                                type="button"
-                                                                                className="btn btn-sm btn-outline-danger"
-                                                                                onClick={() => removeLigne(idx)}
-                                                                                disabled={isClosed}
-                                                                                title="Retirer cette ligne"
-                                                                            >
-                                                                                −
-                                                                            </button>
-                                                                        </td>
-                                                                    </tr>
-                                                                ))}
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                )}
-
-                                                <div className="text-end">
-                                                    <button
-                                                        className="btn btn-primary btn-sm"
-                                                        disabled={!idEmployer || !moisPaieId || isClosed}
-                                                        onClick={handleCalculer}
-                                                    >
-                                                        {loading ? "Calcul..." : "Calculer"}
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            {/* Résultat du calcul */}
-                                            {bulletin && (
-                                                <div className="card p-3">
-                                                    <h6>Bulletin</h6>
-                                                    <div className="table-responsive">
-                                                        <table className="table table-hover">
-                                                            <thead>
-                                                                <tr>
-                                                                    <th>Code</th>
-                                                                    <th>Libellé</th>
-                                                                    <th>Op</th>
-                                                                    <th>Taux %</th>
-                                                                    <th>Montant (MGA)</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                {bulletin.lignes.map((l, i) => (
-                                                                    <tr key={i}>
-                                                                        <td>{l.code}</td>
-                                                                        <td>{l.libelle}</td>
-                                                                        <td>{l.operation === 1 ? "+" : "-"}</td>
-                                                                        <td>{l.taux ?? ""}</td>
-                                                                        <td>{Number(l.montant).toLocaleString("fr-FR")}</td>
-                                                                    </tr>
-                                                                ))}
-                                                            </tbody>
-                                                            <tfoot>
-                                                                <tr>
-                                                                    <th colSpan="4" className="text-end">
-                                                                        Total +
-                                                                    </th>
-                                                                    <th>
-                                                                        {Number(bulletin.totalPlus).toLocaleString("fr-FR")}
-                                                                    </th>
-                                                                </tr>
-                                                                <tr>
-                                                                    <th colSpan="4" className="text-end">
-                                                                        Total -
-                                                                    </th>
-                                                                    <th>
-                                                                        {Number(bulletin.totalMoins).toLocaleString("fr-FR")}
-                                                                    </th>
-                                                                </tr>
-                                                                <tr className="table-info">
-                                                                    <th colSpan="4" className="text-end">
-                                                                        Brut imposable
-                                                                    </th>
-                                                                    <th>
-                                                                        {Number(bulletin.brutImposable ?? 0).toLocaleString("fr-FR")}
-                                                                    </th>
-                                                                </tr>
-                                                                {bulletin.irsa != null && (
-                                                                    <tr className="table-warning">
-                                                                        <th colSpan="4" className="text-end">
-                                                                            IRSA (déjà dans les -)
-                                                                        </th>
-                                                                        <th>
-                                                                            {Number(bulletin.irsa).toLocaleString("fr-FR")}
-                                                                        </th>
-                                                                    </tr>
-                                                                )}
-                                                                <tr className="table-primary">
-                                                                    <th colSpan="4" className="text-end">
-                                                                        Brut
-                                                                    </th>
-                                                                    <th>
-                                                                        {Number(bulletin.brut).toLocaleString("fr-FR")}
-                                                                    </th>
-                                                                </tr>
-                                                                <tr className="table-success">
-                                                                    <th colSpan="4" className="text-end">
-                                                                        Net à payer
-                                                                    </th>
-                                                                    <th>
-                                                                        {Number(bulletin.netAPayer).toLocaleString("fr-FR")}
-                                                                    </th>
-                                                                </tr>
-                                                            </tfoot>
-                                                        </table>
-                                                    </div>
-
-                                                    <div className="text-end">
-                                                        <button
-                                                            className="btn btn-success btn-sm"
-                                                            onClick={handleEnregistrer}
-                                                            disabled={isClosed}
-                                                        >
-                                                            Enregistrer
-                                                        </button>
-                                                        <button
-                                                            className="btn btn-outline-secondary btn-sm ms-2"
-                                                            onClick={() => setBulletin(null)}
-                                                        >
-                                                            Réinitialiser
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div id="styleSelector"></div>
-                            </div>
+                          <div className="col-md-4">
+                            <label>Mois de paie</label>
+                            <select
+                              className="form-control"
+                              value={moisPaieId}
+                              onChange={(e) => {
+                                setMoisPaieId(e.target.value);
+                                setBulletin(null);
+                              }}
+                            >
+                              <option value="">-- Sélectionner --</option>
+                              {moisFiltres.map((m) => (
+                                <option key={m.id} value={m.id}>
+                                  {(m.periode || "").slice(0, 7)}{" "}
+                                  {m.statut === "CLOSED" ? " (Clôturé)" : ""}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
+
+                        {selectedEmployer && (
+                          <div className="alert alert-light border d-flex justify-content-between align-items-center mt-2">
+                            <div>
+                              <div>
+                                <strong>Salaire de base (contrat) :</strong>{" "}
+                                {Number(
+                                  selectedEmployer.salaireBase || 0
+                                ).toLocaleString("fr-FR")}{" "}
+                                MGA
+                              </div>
+                              {isTerminated && (
+                                <div className="text-danger mt-1">
+                                  <i className="icofont icofont-warning-alt"></i>{" "}
+                                  Employé débouché — paie non calculable
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-muted small">
+                              {selectedEmployer.dateEmbauche
+                                ? `Embauché le ${new Date(
+                                    selectedEmployer.dateEmbauche
+                                  ).toLocaleDateString("fr-FR")}`
+                                : ""}
+                              {selectedEmployer.dateDebauche
+                                ? ` · Débouché le ${new Date(
+                                    selectedEmployer.dateDebauche
+                                  ).toLocaleDateString("fr-FR")}`
+                                : ""}
+                            </div>
+                          </div>
+                        )}
+
+                        {isClosed && (
+                          <div className="alert alert-warning mt-2 mb-0">
+                            Ce mois est <b>clôturé</b> : calcul et enregistrement
+                            désactivés.
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Saisies manuelles rapides */}
+                      <div className="card p-3 mb-3">
+                        <div className="d-flex align-items-center justify-content-between">
+                          <h6>Saisies manuelles du mois</h6>
+                          <div className="d-flex flex-wrap gap-2">
+                            {rubriquesManuelles.length === 0 ? (
+                              <span className="text-muted">
+                                Aucune rubrique manuelle disponible pour cette
+                                société.
+                              </span>
+                            ) : (
+                              rubriquesManuelles.map((r) => (
+                                <button
+                                  key={r.id}
+                                  className={`btn btn-sm ${
+                                    r.operation === 1
+                                      ? "btn-outline-primary"
+                                      : "btn-outline-danger"
+                                  }`}
+                                  onClick={() =>
+                                    addLigne(r.code, r.libelle, r.operation)
+                                  }
+                                  disabled={
+                                    isClosed ||
+                                    isTerminated ||
+                                    isInSaisies(r.code)
+                                  }
+                                  title={r.libelle}
+                                >
+                                  {r.operation === 1 ? "+ " : "- "}
+                                  {r.code}
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        </div>
+
+                        {saisies.length === 0 ? (
+                          <p className="text-muted mt-2">
+                            Aucune ligne. Ajoutez des lignes au besoin.
+                          </p>
+                        ) : (
+                          <div className="table-responsive mt-2">
+                            <table className="table table-sm">
+                              <thead>
+                                <tr>
+                                  <th>Code</th>
+                                  <th>Libellé</th>
+                                  <th>Op</th>
+                                  <th>Montant</th>
+                                  <th style={{ width: 1 }}>Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {saisies.map((l, idx) => (
+                                  <tr key={idx}>
+                                    <td>{l.code}</td>
+                                    <td>{l.libelle}</td>
+                                    <td>{l.operation === 1 ? "+" : "-"}</td>
+                                    <td>
+                                      <input
+                                        type="number"
+                                        className="form-control form-control-sm"
+                                        value={l.montant}
+                                        onChange={(e) =>
+                                          updateMontant(idx, e.target.value)
+                                        }
+                                        disabled={isClosed || isTerminated}
+                                      />
+                                    </td>
+                                    <td className="text-nowrap">
+                                      <button
+                                        type="button"
+                                        className="btn btn-sm btn-outline-danger"
+                                        onClick={() => removeLigne(idx)}
+                                        disabled={isClosed || isTerminated}
+                                        title="Retirer cette ligne"
+                                      >
+                                        −
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+
+                        <div className="text-end">
+                          <button
+                            className="btn btn-primary btn-sm"
+                            disabled={
+                              !idEmployer || !moisPaieId || isClosed || isTerminated
+                            }
+                            onClick={handleCalculer}
+                          >
+                            {loading ? "Calcul..." : "Calculer"}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Résultat du calcul */}
+                      {bulletin && (
+                        <div className="card p-3">
+                          <h6>Bulletin</h6>
+                          <div className="table-responsive">
+                            <table className="table table-hover">
+                              <thead>
+                                <tr>
+                                  <th>Code</th>
+                                  <th>Libellé</th>
+                                  <th>Op</th>
+                                  <th>Taux %</th>
+                                  <th>Montant (MGA)</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {bulletin.lignes.map((l, i) => (
+                                  <tr key={i}>
+                                    <td>{l.code}</td>
+                                    <td>{l.libelle}</td>
+                                    <td>{l.operation === 1 ? "+" : "-"}</td>
+                                    <td>{l.taux ?? ""}</td>
+                                    <td>{Number(l.montant).toLocaleString("fr-FR")}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                              <tfoot>
+                                <tr>
+                                  <th colSpan="4" className="text-end">
+                                    Total +
+                                  </th>
+                                  <th>
+                                    {Number(bulletin.totalPlus).toLocaleString("fr-FR")}
+                                  </th>
+                                </tr>
+                                <tr>
+                                  <th colSpan="4" className="text-end">
+                                    Total -
+                                  </th>
+                                  <th>
+                                    {Number(bulletin.totalMoins).toLocaleString("fr-FR")}
+                                  </th>
+                                </tr>
+                                <tr className="table-info">
+                                  <th colSpan="4" className="text-end">
+                                    Brut imposable
+                                  </th>
+                                  <th>
+                                    {Number(bulletin.brutImposable ?? 0).toLocaleString(
+                                      "fr-FR"
+                                    )}
+                                  </th>
+                                </tr>
+                                {bulletin.irsa != null && (
+                                  <tr className="table-warning">
+                                    <th colSpan="4" className="text-end">
+                                      IRSA (déjà dans les -)
+                                    </th>
+                                    <th>
+                                      {Number(bulletin.irsa).toLocaleString("fr-FR")}
+                                    </th>
+                                  </tr>
+                                )}
+                                <tr className="table-primary">
+                                  <th colSpan="4" className="text-end">
+                                    Brut
+                                  </th>
+                                  <th>
+                                    {Number(bulletin.brut).toLocaleString("fr-FR")}
+                                  </th>
+                                </tr>
+                                <tr className="table-success">
+                                  <th colSpan="4" className="text-end">
+                                    Net à payer
+                                  </th>
+                                  <th>
+                                    {Number(bulletin.netAPayer).toLocaleString("fr-FR")}
+                                  </th>
+                                </tr>
+                              </tfoot>
+                            </table>
+                          </div>
+
+                          <div className="text-end">
+                            <button
+                              className="btn btn-success btn-sm"
+                              onClick={handleEnregistrer}
+                              disabled={isClosed}
+                            >
+                              Enregistrer
+                            </button>
+                            <button
+                              className="btn btn-outline-secondary btn-sm ms-2"
+                              onClick={() => setBulletin(null)}
+                            >
+                              Réinitialiser
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
+                  </div>
                 </div>
+                <div id="styleSelector"></div>
+              </div>
             </div>
+          </div>
         </div>
-    );
+      </div>
+    </div>
+  );
 }
 
 export default PaieEmployer;
