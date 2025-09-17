@@ -9,6 +9,8 @@ import PosteService from "../../services/poste/posteService";
 import ServiceService from "../../services/services/service";
 import FacialCapture from "../../pages/faciale/FacialCapture";
 import ExportPointage from "./ExportPointage";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faClock, faHistory, faFilter, faSearch, faRedo } from '@fortawesome/free-solid-svg-icons';
 
 function CreatePointage() {
   useTemplateScripts();
@@ -50,7 +52,10 @@ function CreatePointage() {
   }, []);
 
   const formatDateTime = (dt) => {
-    return new Date(dt).toLocaleString("fr-FR");
+    return new Date(dt).toLocaleString("fr-FR", {
+      year: 'numeric', month: 'numeric', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
   };
 
   const getEmployerDetails = (idEmployerSociete) => {
@@ -92,6 +97,12 @@ function CreatePointage() {
     currentPage * itemsPerPage
   );
 
+  const resetFilters = () => {
+    setFilterDate("");
+    setFilterService("");
+    setFilterPoste("");
+  };
+
   return (
     <div id="pcoded" className="pcoded">
       <div className="pcoded-container navbar-wrapper">
@@ -99,116 +110,149 @@ function CreatePointage() {
         <div className="pcoded-main-container">
           <div className="pcoded-wrapper">
             <Sidebar />
-            <div className="pcoded-content">
-              <div className="main-body">
-                <div className="page-wrapper">
-                  <div className="page-body">
+            <div className="pcoded-content px-4">
+              <div className="page-wrapper pt-4">
+                <div className="page-body">
+                  <div className="row">
+                    {/* Section de pointage pour l'employé */}
                     {user?.roles === 3 && (
-                      <div className="card shadow-lg border-0 p-4 bg-light rounded-4 mb-4">
-                        <h4 className="mb-4 text-primary">
-                          <i className="icofont-clock-time"></i> Mon Pointage
-                        </h4>
-
-                        {successMessage && (
-                          <span className="badge badge-success p-2">{successMessage}</span>
-                        )}
-
-                        {user?.roles === 3 && idemployerSociete && (
-                          <FacialCapture
-                            employerId={idemployerSociete}
-                            pointage={pointage}
-                            createPointage={createPointage}
-                            updatePointage={updatePointage}
-                          />
-                        )}
+                      <div className="col-12 mb-4">
+                        <div className="card shadow-sm border-0 p-4 bg-light rounded-3">
+                          <h4 className="card-title text-primary fw-bold mb-4">
+                            <FontAwesomeIcon icon={faClock} className="me-2" /> Mon Pointage
+                          </h4>
+                          {successMessage && (
+                            <div className="alert alert-success d-flex align-items-center" role="alert">
+                              <i className="icofont-check-circled me-2"></i>
+                              <div>{successMessage}</div>
+                            </div>
+                          )}
+                          {idemployerSociete && (
+                            <FacialCapture
+                              employerId={idemployerSociete}
+                              pointage={pointage}
+                              createPointage={createPointage}
+                              updatePointage={updatePointage}
+                              setSuccessMessage={setSuccessMessage}
+                            />
+                          )}
+                        </div>
                       </div>
                     )}
 
-                    <div className="card shadow p-4 border-0">
-                      <h5>📋 Historique des Pointages</h5>
+                    {/* Section d'historique et de filtres */}
+                    <div className="col-12">
+                      <div className="card shadow-sm border-0 rounded-3">
+                        <div className="card-body p-4">
+                          <h5 className="card-title mb-4 text-primary fw-bold">
+                            <FontAwesomeIcon icon={faHistory} className="me-2" /> Historique des Pointages
+                          </h5>
 
-                      {user?.roles !== 3 && (
-                        <div className="row mb-3">
-                          <div className="col-md-3">
-                            <input type="date" className="form-control" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} />
-                          </div>
-                          <div className="col-md-3">
-                            <select className="form-control" value={filterService} onChange={(e) => setFilterService(e.target.value)}>
-                              <option value="">-- Service --</option>
-                              {services.map(s => (
-                                <option key={s.id} value={s.nomService}>{s.nomService}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div className="col-md-3">
-                            <select className="form-control" value={filterPoste} onChange={(e) => setFilterPoste(e.target.value)}>
-                              <option value="">-- Poste --</option>
-                              {postes.map(p => (
-                                <option key={p.id} value={p.nomPoste}>{p.nomPoste}</option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                      )}
-
-                      {paginatedPointages.length === 0 ? (
-                        <p className="text-muted">Aucun pointage enregistré.</p>
-                      ) : (
-                        <>
-                          <ul className="list-group list-group-flush">
-                            {paginatedPointages.map((p) => {
-                              const details = getEmployerDetails(p.idEmployerSociete);
-                              return (
-                                <li
-                                  key={p.id}
-                                  className="list-group-item d-flex justify-content-between align-items-center"
-                                >
-                                  <div>
-                                    <strong>{details.nom} {details.prenom}</strong><br />
-                                    <span className="text-muted">
-                                      {details.poste} - {details.service}
-                                    </span><br />
-                                    <strong>Arrivée:</strong> {formatDateTime(p.dateArriver)} <br />
-                                    <strong>Départ:</strong> {p.dateDepart ? formatDateTime(p.dateDepart) : <em>Non encore pointé</em>}
-                                  </div>
-                                  <span className={`badge ${p.dateDepart ? "bg-success" : "bg-warning text-dark"}`}>
-                                    {p.dateDepart ? "Complet" : "Incomplet"}
-                                  </span>
-                                </li>
-                              );
-                            })}
-                          </ul>
-
-                          <div className="mt-4 d-flex justify-content-center">
-                            <nav>
-                              <ul className="pagination">
-                                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                                  <li
-                                    key={page}
-                                    className={`page-item ${page === currentPage ? "active" : ""}`}
-                                    onClick={() => setCurrentPage(page)}
-                                  >
-                                    <button className="page-link">{page}</button>
-                                  </li>
-                                ))}
-                              </ul>
-                            </nav>
-                          </div>
-                          {user?.roles === 2 && (
-                            <ExportPointage
-                              pointage={filteredPointages}
-                              employers={employers}
-                              individus={individus}
-                              postes={postes}
-                              services={services}
-                            />
+                          {/* Filtres de recherche (pour RH) */}
+                          {user?.roles !== 3 && (
+                            <div className="row g-3 mb-4 p-3 bg-light rounded-3">
+                              <h6 className="mb-3 text-muted">
+                                <FontAwesomeIcon icon={faFilter} className="me-2" /> Filtres de recherche
+                              </h6>
+                              <div className="col-md-4">
+                                <label className="form-label">Date</label>
+                                <input type="date" className="form-control" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} />
+                              </div>
+                              <div className="col-md-4">
+                                <label className="form-label">Service</label>
+                                <select className="form-control" value={filterService} onChange={(e) => setFilterService(e.target.value)}>
+                                  <option value="">Tous les services</option>
+                                  {services.map(s => (
+                                    <option key={s.id} value={s.nomService}>{s.nomService}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div className="col-md-4">
+                                <label className="form-label">Poste</label>
+                                <select className="form-control" value={filterPoste} onChange={(e) => setFilterPoste(e.target.value)}>
+                                  <option value="">Tous les postes</option>
+                                  {postes.map(p => (
+                                    <option key={p.id} value={p.nomPoste}>{p.nomPoste}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div className="col-12 d-flex justify-content-end mt-3">
+                                <button className="btn btn-outline-secondary btn-sm" onClick={resetFilters}>
+                                  <FontAwesomeIcon icon={faRedo} className="me-2" /> Réinitialiser
+                                </button>
+                              </div>
+                            </div>
                           )}
-                        </>
-                      )}
+
+                          {/* Liste des pointages */}
+                          {paginatedPointages.length === 0 ? (
+                            <div className="text-center p-5">
+                              <FontAwesomeIcon icon={faSearch} size="3x" className="text-muted mb-3" />
+                              <p className="text-muted">Aucun pointage trouvé pour cette sélection.</p>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="list-group">
+                                {paginatedPointages.map((p) => {
+                                  const details = getEmployerDetails(p.idEmployerSociete);
+                                  return (
+                                    <div key={p.id} className="list-group-item list-group-item-action d-flex justify-content-between align-items-start mb-3 border rounded-3 p-3 shadow-sm">
+                                      <div className="w-100">
+                                        <div className="d-flex w-100 justify-content-between align-items-center">
+                                          <h6 className="mb-1 fw-bold text-dark">{details.nom} {details.prenom}</h6>
+                                          <small className={`badge bg-${p.dateDepart ? "success" : "warning text-dark"} rounded-pill`}>
+                                            {p.dateDepart ? "Complet" : "Incomplet"}
+                                          </small>
+                                        </div>
+                                        <p className="mb-1 text-muted">
+                                          <i className="icofont-id-card me-1"></i> {details.poste} - {details.service}
+                                        </p>
+                                        <div className="d-flex justify-content-between mt-2 flex-wrap">
+                                          <div className="me-3 mb-2">
+                                            <i className="icofont-login text-success me-1"></i>
+                                            <span className="fw-bold">Arrivée:</span> <span className="text-secondary">{formatDateTime(p.dateArriver)}</span>
+                                          </div>
+                                          <div className="mb-2">
+                                            <i className="icofont-logout text-danger me-1"></i>
+                                            <span className="fw-bold">Départ:</span> <span className="text-secondary">{p.dateDepart ? formatDateTime(p.dateDepart) : <em className="text-danger">Non pointé</em>}</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              <nav className="mt-4 d-flex justify-content-center">
+                                <ul className="pagination">
+                                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                    <li
+                                      key={page}
+                                      className={`page-item ${page === currentPage ? "active" : ""}`}
+                                      onClick={() => setCurrentPage(page)}
+                                    >
+                                      <button className="page-link">{page}</button>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </nav>
+                            </>
+                          )}
+                          {user?.roles === 2 && (
+                            <div className="mt-4 d-flex justify-content-center">
+                              <ExportPointage
+                                pointage={filteredPointages}
+                                employers={employers}
+                                individus={individus}
+                                postes={postes}
+                                services={services}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div id="styleSelector"></div>
               </div>
             </div>
           </div>

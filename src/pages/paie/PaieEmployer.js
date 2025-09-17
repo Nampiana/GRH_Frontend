@@ -186,95 +186,111 @@ function PaieEmployer() {
                 <div className="main-body">
                   <div className="page-wrapper">
                     <div className="page-body">
-                      <div className="card p-3 mb-3">
-                        <h5>Calcul de paie par employé</h5>
-
-                        <div className="row g-2 mt-2">
-                          <div className="col-md-5">
-                            <label>Employé</label>
-                            <select
-                              className="form-control"
-                              value={idEmployer}
-                              onChange={(e) => {
-                                setIdEmployer(e.target.value);
-                                setBulletin(null);
-                              }}
-                            >
-                              <option value="">-- Sélectionner --</option>
-                              {employersSorted.map((e) => (
-                                <option key={e.id} value={e.id}>
-                                  {renderEmployerOptionLabel(e)}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div className="col-md-4">
-                            <label>Mois de paie</label>
-                            <select
-                              className="form-control"
-                              value={moisPaieId}
-                              onChange={(e) => {
-                                setMoisPaieId(e.target.value);
-                                setBulletin(null);
-                              }}
-                            >
-                              <option value="">-- Sélectionner --</option>
-                              {moisFiltres.map((m) => (
-                                <option key={m.id} value={m.id}>
-                                  {(m.periode || "").slice(0, 7)}{" "}
-                                  {m.statut === "CLOSED" ? " (Clôturé)" : ""}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
+                      {/* Section de sélection de l'employé et du mois */}
+                      <div className="card">
+                        <div className="card-header">
+                          <h5>
+                            <i className="feather icon-dollar-sign me-2"></i>
+                            Calcul de paie par employé
+                          </h5>
                         </div>
+                        <div className="card-block p-4">
+                          <div className="row g-3">
+                            <div className="col-md-6">
+                              <label className="form-label">Employé</label>
+                              <select
+                                className="form-control"
+                                value={idEmployer}
+                                onChange={(e) => {
+                                  setIdEmployer(e.target.value);
+                                  setBulletin(null);
+                                }}
+                              >
+                                <option value="">
+                                  -- Sélectionner un employé --
+                                </option>
+                                {Array.isArray(employersSorted) &&
+                                  employersSorted.map((e) => (
+                                    <option key={e.id} value={e.id}>
+                                      {renderEmployerOptionLabel(e)}
+                                    </option>
+                                  ))}
+                              </select>
+                            </div>
+                            <div className="col-md-6">
+                              <label className="form-label">Mois de paie</label>
+                              <select
+                                className="form-control"
+                                value={moisPaieId}
+                                onChange={(e) => {
+                                  setMoisPaieId(e.target.value);
+                                  setBulletin(null);
+                                }}
+                              >
+                                <option value="">-- Sélectionner un mois --</option>
+                                {Array.isArray(moisFiltres) &&
+                                  moisFiltres.map((m) => (
+                                    <option key={m.id} value={m.id}>
+                                      {(m.periode || "").slice(0, 7)}{" "}
+                                      {m.statut === "CLOSED" ? " (Clôturé)" : ""}
+                                    </option>
+                                  ))}
+                              </select>
+                            </div>
+                          </div>
 
-                        {selectedEmployer && (
-                          <div className="alert alert-light border d-flex justify-content-between align-items-center mt-2">
-                            <div>
+                          {selectedEmployer && (
+                            <div className="alert alert-info border mt-3 p-3">
+                              <h6 className="alert-heading m-0">
+                                Détails de l'employé
+                              </h6>
+                              <hr className="my-2" />
                               <div>
                                 <strong>Salaire de base (contrat) :</strong>{" "}
-                                {Number(
-                                  selectedEmployer.salaireBase || 0
-                                ).toLocaleString("fr-FR")}{" "}
-                                MGA
+                                <span className="text-primary fw-bold">
+                                  {Number(
+                                    selectedEmployer.salaireBase || 0
+                                  ).toLocaleString("fr-FR")}
+                                  <span className="ms-1">MGA</span>
+                                </span>
                               </div>
+                              <small className="text-muted">
+                                Embauché le{" "}
+                                {new Date(
+                                  selectedEmployer.dateEmbauche
+                                ).toLocaleDateString("fr-FR")}
+                                {selectedEmployer.dateDebauche &&
+                                  ` · Débauché le ${new Date(
+                                    selectedEmployer.dateDebauche
+                                  ).toLocaleDateString("fr-FR")}`}
+                              </small>
                               {isTerminated && (
-                                <div className="text-danger mt-1">
-                                  <i className="icofont icofont-warning-alt"></i>{" "}
-                                  Employé débouché — paie non calculable
+                                <div className="text-danger mt-2">
+                                  <i className="feather icon-alert-triangle me-1"></i>
+                                  Employé débauché - le calcul de paie est
+                                  désactivé.
                                 </div>
                               )}
                             </div>
-                            <div className="text-muted small">
-                              {selectedEmployer.dateEmbauche
-                                ? `Embauché le ${new Date(
-                                    selectedEmployer.dateEmbauche
-                                  ).toLocaleDateString("fr-FR")}`
-                                : ""}
-                              {selectedEmployer.dateDebauche
-                                ? ` · Débouché le ${new Date(
-                                    selectedEmployer.dateDebauche
-                                  ).toLocaleDateString("fr-FR")}`
-                                : ""}
+                          )}
+                          {isClosed && (
+                            <div className="alert alert-warning mt-3">
+                              <i className="feather icon-lock me-1"></i>
+                              Ce mois est <b>clôturé</b>. Le calcul et
+                              l'enregistrement sont désactivés pour ce bulletin.
                             </div>
-                          </div>
-                        )}
-
-                        {isClosed && (
-                          <div className="alert alert-warning mt-2 mb-0">
-                            Ce mois est <b>clôturé</b> : calcul et enregistrement
-                            désactivés.
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
 
-                      {/* Saisies manuelles rapides */}
-                      <div className="card p-3 mb-3">
-                        <div className="d-flex align-items-center justify-content-between">
-                          <h6>Saisies manuelles du mois</h6>
-                          <div className="d-flex flex-wrap gap-2">
+                      {/* Section des saisies manuelles */}
+                      <div className="card mt-3">
+                        <div className="card-header">
+                          <h5>
+                            <i className="feather icon-edit-3 me-2"></i>
+                            Saisies manuelles
+                          </h5>
+                          <div className="d-flex flex-wrap gap-2 mt-2">
                             {rubriquesManuelles.length === 0 ? (
                               <span className="text-muted">
                                 Aucune rubrique manuelle disponible pour cette
@@ -284,190 +300,206 @@ function PaieEmployer() {
                               rubriquesManuelles.map((r) => (
                                 <button
                                   key={r.id}
-                                  className={`btn btn-sm ${
-                                    r.operation === 1
-                                      ? "btn-outline-primary"
-                                      : "btn-outline-danger"
-                                  }`}
+                                  className={`btn btn-sm ${r.operation === 1
+                                    ? "btn-outline-primary"
+                                    : "btn-outline-danger"
+                                    }`}
                                   onClick={() =>
                                     addLigne(r.code, r.libelle, r.operation)
                                   }
                                   disabled={
-                                    isClosed ||
-                                    isTerminated ||
-                                    isInSaisies(r.code)
+                                    isClosed || isTerminated || isInSaisies(r.code)
                                   }
                                   title={r.libelle}
                                 >
-                                  {r.operation === 1 ? "+ " : "- "}
+                                  {r.operation === 1 ? (
+                                    <i className="feather icon-plus me-1"></i>
+                                  ) : (
+                                    <i className="feather icon-minus me-1"></i>
+                                  )}
                                   {r.code}
                                 </button>
                               ))
                             )}
                           </div>
                         </div>
-
-                        {saisies.length === 0 ? (
-                          <p className="text-muted mt-2">
-                            Aucune ligne. Ajoutez des lignes au besoin.
-                          </p>
-                        ) : (
-                          <div className="table-responsive mt-2">
-                            <table className="table table-sm">
-                              <thead>
-                                <tr>
-                                  <th>Code</th>
-                                  <th>Libellé</th>
-                                  <th>Op</th>
-                                  <th>Montant</th>
-                                  <th style={{ width: 1 }}>Actions</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {saisies.map((l, idx) => (
-                                  <tr key={idx}>
-                                    <td>{l.code}</td>
-                                    <td>{l.libelle}</td>
-                                    <td>{l.operation === 1 ? "+" : "-"}</td>
-                                    <td>
-                                      <input
-                                        type="number"
-                                        className="form-control form-control-sm"
-                                        value={l.montant}
-                                        onChange={(e) =>
-                                          updateMontant(idx, e.target.value)
-                                        }
-                                        disabled={isClosed || isTerminated}
-                                      />
-                                    </td>
-                                    <td className="text-nowrap">
-                                      <button
-                                        type="button"
-                                        className="btn btn-sm btn-outline-danger"
-                                        onClick={() => removeLigne(idx)}
-                                        disabled={isClosed || isTerminated}
-                                        title="Retirer cette ligne"
-                                      >
-                                        −
-                                      </button>
-                                    </td>
+                        <div className="card-block p-4">
+                          {saisies.length === 0 ? (
+                            <div className="text-muted text-center py-4">
+                              <i className="feather icon-info me-1"></i>
+                              Aucune ligne. Utilisez les boutons ci-dessus pour en ajouter.
+                            </div>
+                          ) : (
+                            <div className="table-responsive">
+                              <table className="table table-hover table-sm">
+                                <thead>
+                                  <tr>
+                                    <th>Code</th>
+                                    <th>Libellé</th>
+                                    <th>Opération</th>
+                                    <th>Montant</th>
+                                    <th className="text-center">Actions</th>
                                   </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
+                                </thead>
+                                <tbody>
+                                  {saisies.map((l, idx) => (
+                                    <tr key={idx}>
+                                      <td>
+                                        <strong>{l.code}</strong>
+                                      </td>
+                                      <td>{l.libelle}</td>
+                                      <td>
+                                        <span
+                                          className={`badge ${l.operation === 1
+                                            ? "bg-success"
+                                            : "bg-danger"
+                                            }`}
+                                        >
+                                          {l.operation === 1 ? "+" : "-"}
+                                        </span>
+                                      </td>
+                                      <td>
+                                        <input
+                                          type="number"
+                                          className="form-control form-control-sm"
+                                          value={l.montant}
+                                          onChange={(e) =>
+                                            updateMontant(idx, e.target.value)
+                                          }
+                                          disabled={isClosed || isTerminated}
+                                        />
+                                      </td>
+                                      <td className="text-center">
+                                        <button
+                                          type="button"
+                                          className="btn btn-danger btn-sm"
+                                          onClick={() => removeLigne(idx)}
+                                          disabled={isClosed || isTerminated}
+                                          title="Retirer cette ligne"
+                                        >
+                                          <i className="feather icon-trash-2 me-1"></i>
+                                          Supprimer
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
 
-                        <div className="text-end">
-                          <button
-                            className="btn btn-primary btn-sm"
-                            disabled={
-                              !idEmployer || !moisPaieId || isClosed || isTerminated
-                            }
-                            onClick={handleCalculer}
-                          >
-                            {loading ? "Calcul..." : "Calculer"}
-                          </button>
+                          <div className="d-flex justify-content-end mt-3">
+                            <button
+                              className="btn btn-primary"
+                              disabled={
+                                !idEmployer || !moisPaieId || isClosed || isTerminated
+                              }
+                              onClick={handleCalculer}
+                            >
+                              {loading ? (
+                                <>
+                                  <span
+                                    className="spinner-border spinner-border-sm me-2"
+                                    role="status"
+                                  ></span>
+                                  Calcul en cours...
+                                </>
+                              ) : (
+                                <>
+                                  <i className="feather icon-refresh-cw me-2"></i>
+                                  Calculer
+                                </>
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Résultat du calcul */}
+                      {/* Section du résultat du bulletin */}
                       {bulletin && (
-                        <div className="card p-3">
-                          <h6>Bulletin</h6>
-                          <div className="table-responsive">
-                            <table className="table table-hover">
-                              <thead>
-                                <tr>
-                                  <th>Code</th>
-                                  <th>Libellé</th>
-                                  <th>Op</th>
-                                  <th>Taux %</th>
-                                  <th>Montant (MGA)</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {bulletin.lignes.map((l, i) => (
-                                  <tr key={i}>
-                                    <td>{l.code}</td>
-                                    <td>{l.libelle}</td>
-                                    <td>{l.operation === 1 ? "+" : "-"}</td>
-                                    <td>{l.taux ?? ""}</td>
-                                    <td>{Number(l.montant).toLocaleString("fr-FR")}</td>
+                        <div className="card mt-3">
+                          <div className="card-header">
+                            <h5>
+                              <i className="feather icon-file-text me-2"></i>
+                              Bulletin de paie
+                            </h5>
+                          </div>
+                          <div className="card-block p-4">
+                            <div className="table-responsive">
+                              <table className="table table-hover">
+                                <thead>
+                                  <tr>
+                                    <th>Code</th>
+                                    <th>Libellé</th>
+                                    <th>Op</th>
+                                    <th>Taux %</th>
+                                    <th>Montant (MGA)</th>
                                   </tr>
-                                ))}
-                              </tbody>
-                              <tfoot>
-                                <tr>
-                                  <th colSpan="4" className="text-end">
-                                    Total +
-                                  </th>
-                                  <th>
-                                    {Number(bulletin.totalPlus).toLocaleString("fr-FR")}
-                                  </th>
-                                </tr>
-                                <tr>
-                                  <th colSpan="4" className="text-end">
-                                    Total -
-                                  </th>
-                                  <th>
-                                    {Number(bulletin.totalMoins).toLocaleString("fr-FR")}
-                                  </th>
-                                </tr>
-                                <tr className="table-info">
-                                  <th colSpan="4" className="text-end">
-                                    Brut imposable
-                                  </th>
-                                  <th>
-                                    {Number(bulletin.brutImposable ?? 0).toLocaleString(
-                                      "fr-FR"
-                                    )}
-                                  </th>
-                                </tr>
-                                {bulletin.irsa != null && (
-                                  <tr className="table-warning">
+                                </thead>
+                                <tbody>
+                                  {bulletin.lignes.map((l, i) => (
+                                    <tr key={i}>
+                                      <td>
+                                        <strong>{l.code}</strong>
+                                      </td>
+                                      <td>{l.libelle}</td>
+                                      <td>
+                                        <span
+                                          className={`badge ${l.operation === 1
+                                            ? "bg-success"
+                                            : "bg-danger"
+                                            }`}
+                                        >
+                                          {l.operation === 1 ? "+" : "-"}
+                                        </span>
+                                      </td>
+                                      <td>{l.taux ? `${l.taux}%` : "-"}</td>
+                                      <td>
+                                        {Number(l.montant).toLocaleString("fr-FR")}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                                <tfoot>
+                                  <tr className="table-success">
                                     <th colSpan="4" className="text-end">
-                                      IRSA (déjà dans les -)
+                                      Net à payer
                                     </th>
                                     <th>
-                                      {Number(bulletin.irsa).toLocaleString("fr-FR")}
+                                      {Number(bulletin.netAPayer).toLocaleString(
+                                        "fr-FR"
+                                      )}
                                     </th>
                                   </tr>
-                                )}
-                                <tr className="table-primary">
-                                  <th colSpan="4" className="text-end">
-                                    Brut
-                                  </th>
-                                  <th>
-                                    {Number(bulletin.brut).toLocaleString("fr-FR")}
-                                  </th>
-                                </tr>
-                                <tr className="table-success">
-                                  <th colSpan="4" className="text-end">
-                                    Net à payer
-                                  </th>
-                                  <th>
-                                    {Number(bulletin.netAPayer).toLocaleString("fr-FR")}
-                                  </th>
-                                </tr>
-                              </tfoot>
-                            </table>
-                          </div>
+                                  <tr className="table-primary">
+                                    <th colSpan="4" className="text-end">
+                                      Brut
+                                    </th>
+                                    <th>
+                                      {Number(bulletin.brut).toLocaleString("fr-FR")}
+                                    </th>
+                                  </tr>
+                                </tfoot>
+                              </table>
+                            </div>
 
-                          <div className="text-end">
-                            <button
-                              className="btn btn-success btn-sm"
-                              onClick={handleEnregistrer}
-                              disabled={isClosed}
-                            >
-                              Enregistrer
-                            </button>
-                            <button
-                              className="btn btn-outline-secondary btn-sm ms-2"
-                              onClick={() => setBulletin(null)}
-                            >
-                              Réinitialiser
-                            </button>
+                            <div className="d-flex justify-content-end gap-2 mt-3">
+                              <button
+                                className="btn btn-success"
+                                onClick={handleEnregistrer}
+                                disabled={isClosed}
+                              >
+                                <i className="feather icon-save me-2"></i>
+                                Enregistrer
+                              </button>
+                              <button
+                                className="btn btn-outline-secondary"
+                                onClick={() => setBulletin(null)}
+                              >
+                                <i className="feather icon-x me-2"></i>
+                                Réinitialiser
+                              </button>
+                            </div>
                           </div>
                         </div>
                       )}

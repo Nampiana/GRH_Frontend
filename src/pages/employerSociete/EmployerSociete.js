@@ -11,6 +11,12 @@ import DepartementServices from "../../services/departement/departement";
 import utilisateurServices from "../../services/utilisateur/utilisateurService";
 import useTemplateScripts from "../../utils/useTemplateScripts";
 import useUtilisateur from "../../hook/utilisateur/utilisateurHook";
+import ModalForm from '../../components/ModalForm';
+import ModalDelete from '../../components/ModalDelete';
+
+// NOTE: Assurez-vous d'avoir les dépendances Bootstrap 5 pour les classes CSS.
+// Si ce n'est pas le cas, vous devrez adapter les classes (ex: 'd-flex', 'g-2', etc.)
+// ou installer Bootstrap via npm/yarn.
 
 function EmployerSociete() {
   useTemplateScripts();
@@ -18,7 +24,7 @@ function EmployerSociete() {
   const { employers, createEmployer, updateEmployer, deleteEmployer } = useEmployerSociete();
   const { updateUtilisateur } = useUtilisateur();
 
-  // Données
+  // --- États et données ---
   const [individus, setIndividus] = useState([]);
   const [societes, setSocietes] = useState([]);
   const [utilisateur, setUtilisateur] = useState([]);
@@ -26,52 +32,33 @@ function EmployerSociete() {
   const [postes, setPostes] = useState([]);
   const [categories, setCategories] = useState([]);
   const [departements, setDepartements] = useState([]);
-
-  // User (roles, societe)
   const [user, setUser] = useState({ roles: 1, societe: "" });
 
-  // Formulaire (➕ salaireBase)
   const [formData, setFormData] = useState({
-    nom: "",
-    prenom: "",
-    adresse: "",
-    email: "",
-    password: "",
-    telephone: "",
-    idSociete: "",
-    idService: "",
-    idPoste: "",
-    idCategorie: "",
-    salaireBase: "",
-    dateDebauche: "",
-    role: 3
+    nom: "", prenom: "", adresse: "", email: "", password: "", telephone: "",
+    idSociete: "", idService: "", idPoste: "", idCategorie: "",
+    salaireBase: "", dateDebauche: "", role: 3
   });
 
-  // Sélections / Modales
   const [selectedEmployer, setSelectedEmployer] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-
-  // Messages
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Filtres
+  // --- Filtres ---
   const [selectedSocieteFilter, setSelectedSocieteFilter] = useState("");
   const [searchName, setSearchName] = useState("");
   const [selectedDepartementFilter, setSelectedDepartementFilter] = useState("");
   const [selectedServiceFilter, setSelectedServiceFilter] = useState("");
   const [selectedPosteFilter, setSelectedPosteFilter] = useState("");
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
-  // Récup user
+  // --- Chargement initial des données ---
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem("user"));
     if (userData) {
       setUser({ roles: userData.roles, societe: userData.societe });
     }
-  }, []);
-
-  // Charger référentiels
-  useEffect(() => {
     IndividuServices.getAll().then(res => setIndividus(res.data.content || res.data));
     SocieteServices.getAll().then(res => setSocietes(res.data.content || res.data));
     ServiceServices.getAll().then(res => setServices(res.data.content || res.data));
@@ -81,103 +68,60 @@ function EmployerSociete() {
     DepartementServices.getAll().then(res => setDepartements(res.data.content || res.data));
   }, []);
 
-  // Format Ariary (fallback si Intl MGA indisponible)
+  // --- Fonctions utilitaires ---
   const formatAriary = (val) => {
     if (val === null || val === undefined || val === "") return "N/A";
     try {
-      return new Intl.NumberFormat("fr-MG", {
-        style: "currency",
-        currency: "MGA",
-        maximumFractionDigits: 0
-      }).format(Number(val));
+      return new Intl.NumberFormat("fr-MG", { style: "currency", currency: "MGA", maximumFractionDigits: 0 }).format(Number(val));
     } catch {
       return `${Number(val).toLocaleString("fr-MG")} Ar`;
     }
   };
 
-  // Form handlers (convertit salaireBase en nombre si possible)
-  const handleInputChange = e => {
-    const { name, value } = e.target;
-    if (name === "salaireBase") {
-      const num = value === "" ? "" : Math.max(0, Number(value));
-      setFormData(prev => ({ ...prev, [name]: isNaN(num) ? "" : num }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
-  };
-
   const resetForm = () => {
     setFormData({
-      nom: "",
-      prenom: "",
-      adresse: "",
-      email: "",
-      password: "",
-      telephone: "",
-      idSociete: "",
-      idService: "",
-      idPoste: "",
-      idCategorie: "",
-      salaireBase: "",
-      dateDebauche: "",
-      role: user.roles === 1 ? 2 : 3
+      nom: "", prenom: "", adresse: "", email: "", password: "", telephone: "",
+      idSociete: "", idService: "", idPoste: "", idCategorie: "",
+      salaireBase: "", dateDebauche: "", role: user.roles === 1 ? 2 : 3
     });
     setSelectedEmployer(null);
   };
 
-  // Create / Update (➕ salaireBase dans employerSociete)
+  // --- Gestionnaires d'événements ---
+  const handleInputChange = e => {
+    const { name, value } = e.target;
+    const isNumberField = ["salaireBase"].includes(name);
+    const newValue = isNumberField ? (value === "" ? "" : Math.max(0, Number(value))) : value;
+    setFormData(prev => ({ ...prev, [name]: newValue }));
+  };
+
   const handleCreateOrUpdate = () => {
-    let roleToAssign = formData.role;
-
-    if (!selectedEmployer && user.roles === 1) {
-      roleToAssign = 2;
-    }
-
+    const roleToAssign = selectedEmployer && user.roles === 1 ? formData.role : (user.roles === 1 ? 2 : formData.role);
     const payload = {
       employerSociete: {
-        idSociete: formData.idSociete,
-        idService: formData.idService,
-        idPoste: formData.idPoste,
-        idCategorie: formData.idCategorie,
-        salaireBase: formData.salaireBase === "" ? null : Number(formData.salaireBase),
+        idSociete: formData.idSociete, idService: formData.idService, idPoste: formData.idPoste,
+        idCategorie: formData.idCategorie, salaireBase: formData.salaireBase === "" ? null : Number(formData.salaireBase),
         dateDebauche: formData.dateDebauche || null
       },
-      nom: formData.nom,
-      prenom: formData.prenom,
-      adresse: formData.adresse,
-      email: formData.email,
-      telephone: formData.telephone,
-      idSociete: formData.idSociete,
-      role: parseInt(roleToAssign, 10)
-    };
-
-    const createPayload = {
-      ...payload,
-      password: formData.password
+      nom: formData.nom, prenom: formData.prenom, adresse: formData.adresse,
+      email: formData.email, telephone: formData.telephone,
+      idSociete: formData.idSociete, role: parseInt(roleToAssign, 10)
     };
 
     if (selectedEmployer) {
+      const utilisateurToUpdate = {
+        idIndividu: selectedEmployer.idIndividue, idSociete: formData.idSociete,
+        etat: 1, roles: parseInt(formData.role, 10)
+      };
       updateEmployer(selectedEmployer.id, payload, () => {
-        // Mettre à jour aussi l'utilisateur lié
-        const utilisateurToUpdate = {
-          idIndividu: selectedEmployer.idIndividue,
-          idSociete: formData.idSociete,
-          etat: 1,
-          roles: parseInt(formData.role, 10)
-        };
-
         updateUtilisateur(selectedEmployer.idUtilisateur, utilisateurToUpdate, () => {
-          IndividuServices.getAll().then(res => setIndividus(res.data.content || res.data));
-          utilisateurServices.getAll().then(res => setUtilisateur(res.data.content || res.data));
           setSuccessMessage("Employé modifié avec succès !");
           setShowModal(false);
           resetForm();
         });
       });
     } else {
-      createEmployer(createPayload, () => {
-        IndividuServices.getAll().then(res => setIndividus(res.data.content || res.data));
-        utilisateurServices.getAll().then(res => setUtilisateur(res.data.content || res.data));
+      createEmployer({ ...payload, password: formData.password }, () => {
         setSuccessMessage("Employé créé avec succès !");
         setShowModal(false);
         resetForm();
@@ -185,24 +129,15 @@ function EmployerSociete() {
     }
   };
 
-  // Edit / Delete (pré-remplir salaireBase)
   const handleEdit = employer => {
     const individu = individus.find(i => i.id === employer.idIndividue);
     const userRole = utilisateur.find(u => u.id === employer.idUtilisateur)?.roles || 3;
-
     setSelectedEmployer(employer);
     setFormData({
-      nom: individu?.nom || "",
-      prenom: individu?.prenom || "",
-      adresse: individu?.adresse || "",
-      email: individu?.email || "",
-      password: "",
-      telephone: individu?.telephone || "",
-      idSociete: employer.idSociete,
-      idService: employer.idService,
-      idPoste: employer.idPoste,
-      idCategorie: employer.idCategorie,
-      salaireBase: employer.salaireBase ?? "",
+      nom: individu?.nom || "", prenom: individu?.prenom || "", adresse: individu?.adresse || "",
+      email: individu?.email || "", password: "", telephone: individu?.telephone || "",
+      idSociete: employer.idSociete, idService: employer.idService, idPoste: employer.idPoste,
+      idCategorie: employer.idCategorie, salaireBase: employer.salaireBase ?? "",
       dateDebauche: employer.dateDebauche ? employer.dateDebauche.split("T")[0] : "",
       role: userRole
     });
@@ -216,7 +151,6 @@ function EmployerSociete() {
 
   const confirmDelete = () => {
     deleteEmployer(selectedEmployer.id, () => {
-      IndividuServices.getAll().then(res => setIndividus(res.data.content || res.data));
       setSuccessMessage("Employé supprimé avec succès !");
       setShowDeleteModal(false);
       resetForm();
@@ -231,6 +165,34 @@ function EmployerSociete() {
     }
   }, [successMessage]);
 
+  // Filtrage des employés
+  const filteredEmployers = employers
+    .filter(e => {
+      const isSuperAdmin = user.roles === 1;
+      const isRh = user.roles === 2;
+
+      // Filtre par société
+      if (isSuperAdmin && selectedSocieteFilter && e.idSociete !== selectedSocieteFilter) return false;
+      if (isRh && e.idSociete !== user.societe) return false;
+
+      // Filtre par recherche nom/prénom
+      if (searchName.trim()) {
+        const individu = individus.find(i => i.id === e.idIndividue);
+        const fullName = `${(individu?.nom || "")} ${(individu?.prenom || "")}`.toLowerCase();
+        if (!fullName.includes(searchName.trim().toLowerCase())) return false;
+      }
+
+      // Filtres avancés
+      if (selectedDepartementFilter) {
+        const serv = services.find(s => s.id === e.idService);
+        if (!serv || serv.idDepartement !== selectedDepartementFilter) return false;
+      }
+      if (selectedServiceFilter && e.idService !== selectedServiceFilter) return false;
+      if (selectedPosteFilter && e.idPoste !== selectedPosteFilter) return false;
+
+      return true;
+    });
+
   return (
     <div id="pcoded" className="pcoded">
       <div className="pcoded-container navbar-wrapper">
@@ -239,63 +201,87 @@ function EmployerSociete() {
           <div className="pcoded-wrapper">
             <Sidebar />
             <div className="pcoded-content">
-              <div className="page-wrapper">
-                <div className="page-body">
-                  <div className="card p-3">
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h5>Liste des Employés Société</h5>
+              <div className="page-wrapper p-4">
+                <div className="page-header mb-4">
+                  <div className="row align-items-center">
+                    <div className="col-md-8">
+                      <h2 className="page-title">Gestion des Employés</h2>
+                      <p className="text-muted">Gérez et suivez facilement les employés de votre société.</p>
+                    </div>
+                    <div className="col-md-4 text-end">
                       <button
-                        className="btn btn-primary btn-sm"
+                        className="btn btn-primary shadow-sm"
                         onClick={() => {
                           resetForm();
                           setShowModal(true);
                         }}
                       >
-                        <i className="icofont icofont-plus"></i> Créer
+                        <i className="icofont icofont-plus me-2"></i> Nouvel Employé
                       </button>
                     </div>
+                  </div>
+                </div>
 
-                    {successMessage && (
-                      <div className="alert alert-success" role="alert">
-                        {successMessage}
-                      </div>
-                    )}
+                {successMessage && (
+                  <div className="alert alert-success alert-dismissible fade show" role="alert">
+                    {successMessage}
+                    <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                  </div>
+                )}
 
-                    {/* Filtre Société (rôle 1) */}
-                    {user.roles === 1 && (
-                      <div className="mb-3">
-                        <label>Filtrer par Société :</label>
-                        <select
-                          className="form-control"
-                          value={selectedSocieteFilter}
-                          onChange={(e) => setSelectedSocieteFilter(e.target.value)}
-                        >
-                          <option value="">Toutes les sociétés</option>
-                          {societes.map(s => (
-                            <option key={s.id} value={s.id}>{s.nomSociete}</option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-
-                    {/* Filtres avancés */}
-                    <div className="card p-3 mb-3">
-                      <div className="row g-2 align-items-end">
-                        <div className="col-md-3">
-                          <label>Recherche (Nom / Prénom)</label>
+                {/* --- Section des filtres et recherche --- */}
+                <div className="card shadow-sm mb-4">
+                  <div className="card-header border-0 pb-0">
+                    <h5 className="card-title">Filtres de recherche</h5>
+                  </div>
+                  <div className="card-body">
+                    <div className="row g-3">
+                      <div className="col-md-6 col-lg-4">
+                        <label className="form-label text-muted fw-bold">Rechercher par nom</label>
+                        <div className="input-group">
+                          <span className="input-group-text"><i className="icofont icofont-search"></i></span>
                           <input
                             type="text"
                             className="form-control"
-                            placeholder="Rechercher..."
+                            placeholder="Nom ou prénom..."
                             value={searchName}
                             onChange={(e) => setSearchName(e.target.value)}
                           />
                         </div>
-
-                        <div className="col-md-3">
-                          <label>Département</label>
+                      </div>
+                      {user.roles === 1 && (
+                        <div className="col-md-6 col-lg-4">
+                          <label className="form-label text-muted fw-bold">Filtrer par Société</label>
                           <select
-                            className="form-control"
+                            className="form-select"
+                            value={selectedSocieteFilter}
+                            onChange={(e) => setSelectedSocieteFilter(e.target.value)}
+                          >
+                            <option value="">Toutes les sociétés</option>
+                            {societes.map(s => (
+                              <option key={s.id} value={s.id}>{s.nomSociete}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      <div className="col-md-12 col-lg-4 d-flex align-items-end">
+                        <button
+                          className="btn btn-outline-primary w-100"
+                          onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                          aria-expanded={showAdvancedFilters}
+                          aria-controls="advancedFiltersCollapse"
+                        >
+                          <i className={`icofont icofont-caret-${showAdvancedFilters ? 'up' : 'down'} me-2`}></i>
+                          Filtres avancés
+                        </button>
+                      </div>
+                    </div>
+                    <div className={`collapse ${showAdvancedFilters ? 'show' : ''}`} id="advancedFiltersCollapse">
+                      <div className="row g-3 mt-3">
+                        <div className="col-md-4">
+                          <label className="form-label text-muted fw-bold">Département</label>
+                          <select
+                            className="form-select"
                             value={selectedDepartementFilter}
                             onChange={(e) => {
                               setSelectedDepartementFilter(e.target.value);
@@ -304,19 +290,15 @@ function EmployerSociete() {
                             }}
                           >
                             <option value="">Tous les départements</option>
-                            {(user.roles === 2
-                              ? departements.filter(d => d.idSociete === user.societe)
-                              : departements
-                            ).map(d => (
+                            {(user.roles === 2 ? departements.filter(d => d.idSociete === user.societe) : departements).map(d => (
                               <option key={d.id} value={d.id}>{d.nomDepartement}</option>
                             ))}
                           </select>
                         </div>
-
-                        <div className="col-md-3">
-                          <label>Service</label>
+                        <div className="col-md-4">
+                          <label className="form-label text-muted fw-bold">Service</label>
                           <select
-                            className="form-control"
+                            className="form-select"
                             value={selectedServiceFilter}
                             onChange={(e) => {
                               setSelectedServiceFilter(e.target.value);
@@ -324,134 +306,111 @@ function EmployerSociete() {
                             }}
                           >
                             <option value="">Tous les services</option>
-                            {(user.roles === 2
-                              ? services.filter(s => s.idSociete === user.societe)
-                              : services
-                            )
+                            {(user.roles === 2 ? services.filter(s => s.idSociete === user.societe) : services)
                               .filter(s => !selectedDepartementFilter || s.idDepartement === selectedDepartementFilter)
                               .map(s => (
                                 <option key={s.id} value={s.id}>{s.nomService}</option>
                               ))}
                           </select>
                         </div>
-
-                        <div className="col-md-3">
-                          <label>Poste</label>
+                        <div className="col-md-4">
+                          <label className="form-label text-muted fw-bold">Poste</label>
                           <select
-                            className="form-control"
+                            className="form-select"
                             value={selectedPosteFilter}
                             onChange={(e) => setSelectedPosteFilter(e.target.value)}
                           >
                             <option value="">Tous les postes</option>
-                            {(user.roles === 2
-                              ? postes.filter(p => p.idSociete === user.societe)
-                              : postes
-                            ).map(p => (
+                            {(user.roles === 2 ? postes.filter(p => p.idSociete === user.societe) : postes).map(p => (
                               <option key={p.id} value={p.id}>{p.nomPoste}</option>
                             ))}
                           </select>
                         </div>
-
-                        <div className="col-12 d-flex gap-2 mt-2">
-                          <button
-                            className="btn btn-light border"
-                            onClick={() => {
-                              setSearchName("");
-                              setSelectedDepartementFilter("");
-                              setSelectedServiceFilter("");
-                              setSelectedPosteFilter("");
-                            }}
-                          >
-                            Réinitialiser les filtres
-                          </button>
-                        </div>
                       </div>
                     </div>
+                    <div className="mt-3 text-end">
+                      <button className="btn btn-link text-muted" onClick={() => {
+                        setSearchName("");
+                        setSelectedSocieteFilter("");
+                        setSelectedDepartementFilter("");
+                        setSelectedServiceFilter("");
+                        setSelectedPosteFilter("");
+                        setShowAdvancedFilters(false);
+                      }}>
+                        Réinitialiser les filtres
+                      </button>
+                    </div>
+                  </div>
+                </div>
 
-                    {/* Tableau (➕ colonne Salaire) */}
-                    {employers.length === 0 ? (
-                      <p className="text-center text-muted">Aucun employé enregistré.</p>
+                {/* --- Section du tableau des employés --- */}
+                <div className="card shadow-sm">
+                  <div className="card-body p-0">
+                    {filteredEmployers.length === 0 ? (
+                      <p className="text-center text-muted py-5 mb-0">Aucun employé ne correspond aux critères de recherche.</p>
                     ) : (
                       <div className="table-responsive">
-                        <table className="table table-hover">
-                          <thead>
+                        <table className="table table-hover table-borderless align-middle mb-0">
+                          <thead className="table-light">
                             <tr>
-                              <th>#</th>
-                              <th>Nom</th>
-                              <th>Prénom</th>
-                              <th>Société</th>
-                              <th>Service</th>
-                              <th>Poste</th>
-                              <th>Catégorie</th>
-                              <th>Téléphone</th>
-                              <th>Email</th>
-                              <th>Rôles</th>
-                              <th>Date d'embauche</th>
-                              <th>Salaire de base</th> {/* ⇐ NEW */}
-                              <th>Date de débauche</th>
-                              <th>Actions</th>
+                              <th scope="col" className="text-muted fw-bold">Nom et Prénom</th>
+                              <th scope="col" className="text-muted fw-bold">Détails</th>
+                              <th scope="col" className="text-muted fw-bold">Contact</th>
+                              <th scope="col" className="text-muted fw-bold">Salaire</th>
+                              <th scope="col" className="text-muted fw-bold text-center">Actions</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {employers
-                              .filter(e => {
-                                if (user.roles === 1) {
-                                  if (selectedSocieteFilter && e.idSociete !== selectedSocieteFilter) return false;
-                                } else if (user.roles === 2) {
-                                  if (e.idSociete !== user.societe) return false;
-                                } else {
-                                  return false;
-                                }
+                            {filteredEmployers.map(e => {
+                              const individu = individus.find(i => i.id === e.idIndividue) || {};
+                              const societe = societes.find(s => s.id === e.idSociete)?.nomSociete || "N/A";
+                              const service = services.find(s => s.id === e.idService)?.nomService || "N/A";
+                              const poste = postes.find(p => p.id === e.idPoste)?.nomPoste || "N/A";
+                              const categorie = categories.find(c => c.id === e.idCategorie)?.nomCategorie || "N/A";
+                              const role = utilisateur.find(u => u.id === e.idUtilisateur)?.roles === 2 ? "RH" : "Employé";
+                              const dateEmbauche = e.dateEmbauche ? new Date(e.dateEmbauche).toLocaleDateString() : "N/A";
+                              const dateDebauche = e.dateDebauche ? new Date(e.dateDebauche).toLocaleDateString() : "Actif";
 
-                                if (searchName.trim()) {
-                                  const individu = individus.find(i => i.id === e.idIndividue);
-                                  const full = `${(individu?.nom || "")} ${(individu?.prenom || "")}`.toLowerCase();
-                                  if (!full.includes(searchName.trim().toLowerCase())) return false;
-                                }
-
-                                if (selectedDepartementFilter) {
-                                  const serv = services.find(s => s.id === e.idService);
-                                  if (!serv || serv.idDepartement !== selectedDepartementFilter) return false;
-                                }
-
-                                if (selectedServiceFilter && e.idService !== selectedServiceFilter) return false;
-                                if (selectedPosteFilter && e.idPoste !== selectedPosteFilter) return false;
-
-                                return true;
-                              })
-                              .map((e, index) => {
-                                const individu = individus.find(i => i.id === e.idIndividue) || {};
-                                return (
-                                  <tr key={e.id}>
-                                    <td>{index + 1}</td>
-                                    <td>{individu.nom || "N/A"}</td>
-                                    <td>{individu.prenom || "N/A"}</td>
-                                    <td>{societes.find(s => s.id === e.idSociete)?.nomSociete || "N/A"}</td>
-                                    <td>{services.find(s => s.id === e.idService)?.nomService || "N/A"}</td>
-                                    <td>{postes.find(p => p.id === e.idPoste)?.nomPoste || "N/A"}</td>
-                                    <td>{categories.find(c => c.id === e.idCategorie)?.nomCategorie || "N/A"}</td>
-                                    <td>{individu.telephone || "N/A"}</td>
-                                    <td>{individu.email || "N/A"}</td>
-                                    <td>
-                                      {(() => {
-                                        const role = utilisateur.find(u => u.id === e.idUtilisateur)?.roles;
-                                        return role === 2 ? "RH" : role === 3 ? "Employé" : "N/A";
-                                      })()}
-                                    </td>
-                                    <td>{e.dateEmbauche ? new Date(e.dateEmbauche).toLocaleDateString() : "N/A"}</td>
-                                    <td>{formatAriary(e.salaireBase)}</td> {/* ⇐ NEW */}
-                                    <td>{e.dateDebauche ? new Date(e.dateDebauche).toLocaleDateString() : "Actif"}</td>
-                                    <td>
-                                      <button className="btn btn-warning btn-sm me-2" onClick={() => handleEdit(e)}>
-                                        Modifier
+                              return (
+                                <tr key={e.id}>
+                                  <td>
+                                    <div className="d-flex align-items-center">
+                                      <div className="flex-shrink-0 me-3">
+                                        <div className="bg-light text-primary rounded-circle d-flex align-items-center justify-content-center" style={{ width: "40px", height: "40px" }}>
+                                          <i className="icofont icofont-user"></i>
+                                        </div>
+                                      </div>
+                                      <div className="flex-grow-1">
+                                        <p className="mb-0 fw-bold">{individu.nom || "N/A"} {individu.prenom || "N/A"}</p>
+                                        <p className="mb-0 text-muted small">{poste} - {service}</p>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td>
+                                    <p className="mb-0 fw-bold">{societe}</p>
+                                    <p className="mb-0 text-muted small">{categorie}</p>
+                                  </td>
+                                  <td>
+                                    <p className="mb-0"><i className="icofont icofont-phone me-2 text-primary"></i>{individu.telephone || "N/A"}</p>
+                                    <p className="mb-0"><i className="icofont icofont-ui-email me-2 text-primary"></i>{individu.email || "N/A"}</p>
+                                  </td>
+                                  <td>
+                                    <p className="mb-0 fw-bold">{formatAriary(e.salaireBase)}</p>
+                                    <p className="mb-0 text-muted small">{dateEmbauche}</p>
+                                  </td>
+                                  <td className="text-center">
+                                    <div className="btn-group" role="group">
+                                      <button className="btn btn-light btn-sm text-warning" onClick={() => handleEdit(e)}>
+                                        <i className="icofont icofont-edit"></i>
                                       </button>
-                                      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(e)}>
-                                        Supprimer
+                                      <button className="btn btn-light btn-sm text-danger" onClick={() => handleDelete(e)}>
+                                        <i className="icofont icofont-trash"></i>
                                       </button>
-                                    </td>
-                                  </tr>
-                                );
-                              })}
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
                           </tbody>
                         </table>
                       </div>
@@ -459,192 +418,33 @@ function EmployerSociete() {
                   </div>
                 </div>
               </div>
-
-              {/* Modal création/modification (➕ champ salaireBase) */}
-              {showModal && (
-                <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-                  <div className="modal-dialog modal-dialog-centered modal-lg">
-                    <div className="modal-content">
-                      <div className="modal-header bg-primary text-white">
-                        <h5 className="modal-title">
-                          {selectedEmployer ? "Modifier Employé" : "Créer Employé"}
-                        </h5>
-                        <button className="btn-close btn-close-white" onClick={() => setShowModal(false)}></button>
-                      </div>
-                      <div className="modal-body" style={{ maxHeight: "400px", overflowY: "auto" }}>
-                        {["nom", "prenom", "adresse", "email", "telephone"].map(field => (
-                          <div key={field}>
-                            <label className="mt-2">{field.charAt(0).toUpperCase() + field.slice(1)}</label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              name={field}
-                              value={formData[field]}
-                              onChange={handleInputChange}
-                            />
-                          </div>
-                        ))}
-
-                        {!selectedEmployer && (
-                          <div>
-                            <label className="mt-2">Password</label>
-                            <input
-                              type="password"
-                              className="form-control"
-                              name="password"
-                              value={formData.password}
-                              onChange={handleInputChange}
-                            />
-                          </div>
-                        )}
-
-                        {(user.roles === 2 || selectedEmployer) ? (
-                          <div>
-                            <label className="mt-2">Rôle</label>
-                            <select
-                              className="form-control"
-                              name="role"
-                              value={formData.role}
-                              onChange={handleInputChange}
-                            >
-                              <option value={2}>RH</option>
-                              <option value={3}>Employé</option>
-                            </select>
-                          </div>
-                        ) : (
-                          !selectedEmployer && <input type="hidden" name="role" value={2} />
-                        )}
-
-                        <label className="mt-2">Société</label>
-                        <select
-                          className="form-control"
-                          name="idSociete"
-                          value={formData.idSociete}
-                          onChange={handleInputChange}
-                        >
-                          <option value="">Sélectionner une société</option>
-                          {user.roles === 2
-                            ? societes
-                              .filter(s => s.id === user.societe)
-                              .map(s => (
-                                <option key={s.id} value={s.id}>{s.nomSociete}</option>
-                              ))
-                            : societes.map(s => (
-                              <option key={s.id} value={s.id}>{s.nomSociete}</option>
-                            ))
-                          }
-                        </select>
-
-                        <label className="mt-2">Service</label>
-                        <select
-                          className="form-control"
-                          name="idService"
-                          value={formData.idService}
-                          onChange={handleInputChange}
-                        >
-                          <option value="">Sélectionner un service</option>
-                          {(user.roles === 2
-                            ? services.filter(s => s.idSociete === user.societe)
-                            : services
-                          ).map(s => (
-                            <option key={s.id} value={s.id}>{s.nomService}</option>
-                          ))}
-                        </select>
-
-                        <label className="mt-2">Poste</label>
-                        <select
-                          className="form-control"
-                          name="idPoste"
-                          value={formData.idPoste}
-                          onChange={handleInputChange}
-                        >
-                          <option value="">Sélectionner un poste</option>
-                          {(user.roles === 2
-                            ? postes.filter(p => p.idSociete === user.societe)
-                            : postes
-                          ).map(p => (
-                            <option key={p.id} value={p.id}>{p.nomPoste}</option>
-                          ))}
-                        </select>
-
-                        <label className="mt-2">Catégorie</label>
-                        <select
-                          className="form-control"
-                          name="idCategorie"
-                          value={formData.idCategorie}
-                          onChange={handleInputChange}
-                        >
-                          <option value="">Sélectionner une catégorie</option>
-                          {categories.map(c => (
-                            <option key={c.id} value={c.id}>{c.nomCategorie}</option>
-                          ))}
-                        </select>
-
-                        {/* NEW: Salaire de base */}
-                        <div>
-                          <label className="mt-2">Salaire de base (Ariary)</label>
-                          <input
-                            type="number"
-                            className="form-control"
-                            name="salaireBase"
-                            min="0"
-                            step="1"
-                            placeholder="Ex: 450000"
-                            value={formData.salaireBase}
-                            onChange={handleInputChange}
-                          />
-                          <small className="text-muted">
-                            {formData.salaireBase !== "" ? `Aperçu : ${formatAriary(formData.salaireBase)}` : ""}
-                          </small>
-                        </div>
-                        <div>
-                          <label className="mt-2">Date de débauche</label>
-                          <input
-                            type="date"
-                            className="form-control"
-                            name="dateDebauche"
-                            value={formData.dateDebauche}
-                            onChange={handleInputChange}
-                          />
-                          <small className="text-muted">Laisser vide si l'employé est encore actif</small>
-                        </div>
-                      </div>
-                      <div className="modal-footer">
-                        <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Annuler</button>
-                        <button className="btn btn-primary" onClick={handleCreateOrUpdate}>
-                          {selectedEmployer ? "Enregistrer" : "Créer"}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Modal suppression */}
-              {showDeleteModal && (
-                <div className="modal fade show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-                  <div className="modal-dialog modal-dialog-centered">
-                    <div className="modal-content border-0 shadow rounded-3">
-                      <div className="modal-header bg-danger text-white">
-                        <h5 className="modal-title">Confirmer la suppression</h5>
-                        <button className="btn-close btn-close-white" onClick={() => setShowDeleteModal(false)}></button>
-                      </div>
-                      <div className="modal-body text-center">
-                        Voulez-vous supprimer <strong>{formData.nom} {formData.prenom}</strong> ?
-                      </div>
-                      <div className="modal-footer justify-content-center">
-                        <button className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>Annuler</button>
-                        <button className="btn btn-danger" onClick={confirmDelete}>Supprimer</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
             </div>
           </div>
         </div>
       </div>
+
+      <ModalForm
+        show={showModal}
+        handleClose={() => setShowModal(false)}
+        formData={formData}
+        handleInputChange={handleInputChange}
+        handleCreateOrUpdate={handleCreateOrUpdate}
+        selectedEmployer={selectedEmployer}
+        user={user}
+        societes={societes}
+        services={services}
+        postes={postes}
+        categories={categories}
+        formatAriary={formatAriary}
+      />
+
+      <ModalDelete
+        show={showDeleteModal}
+        handleClose={() => setShowDeleteModal(false)}
+        confirmDelete={confirmDelete}
+        nom={formData.nom}
+        prenom={formData.prenom}
+      />
     </div>
   );
 }

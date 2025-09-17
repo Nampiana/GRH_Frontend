@@ -10,6 +10,9 @@ import IndividuServices from "../../services/individu/individuService";
 import CategorieServices from "../../services/categorie/categorie";
 import SocieteServices from "../../services/societe/societeService";
 
+// J'ai enlevé tout le reste du code qui n'a pas besoin d'être modifié ici.
+// C'est la section `return` qui nous intéresse.
+
 function BulletinsMois() {
   useTemplateScripts();
 
@@ -387,7 +390,7 @@ function BulletinsMois() {
     setDetailRow(row);
     setShowDetail(true);
   };
-
+  
   return (
     <div id="pcoded" className="pcoded">
       <div className="pcoded-container navbar-wrapper">
@@ -400,37 +403,57 @@ function BulletinsMois() {
                 <div className="main-body">
                   <div className="page-wrapper">
                     <div className="page-body">
-                      <div className="card p-3 mb-3">
-                        <div className="d-flex justify-content-between align-items-center">
-                          <h5>Bulletins du mois — Vue complète</h5>
-                          <div className="d-flex gap-2">
+                      {/* --- En-tête avec titre, boutons et filtres --- */}
+                      <div className="card shadow-sm p-4 mb-4">
+                        <div className="d-flex justify-content-between align-items-center mb-4">
+                          <h4 className="m-0 text-primary fw-bold">
+                            <i className="feather icon-file-text me-2"></i>
+                            Bulletins de salaire
+                          </h4>
+                          <div className="d-flex align-items-center gap-2 flex-wrap">
+                            {/* Bouton pour charger les bulletins avec un indicateur de chargement */}
                             <button
-                              className="btn btn-primary btn-sm"
+                              className="btn btn-primary d-flex align-items-center"
                               disabled={!societeId || !moisPaieId || loading}
                               onClick={computeAll}
                             >
-                              {loading ? `Calcul… (${progress.done}/${progress.total})` : "Charger les bulletins"}
+                              {loading ? (
+                                <>
+                                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                  Calcul en cours… ({progress.done}/{progress.total})
+                                </>
+                              ) : (
+                                <>
+                                  <i className="feather icon-play me-2"></i>
+                                  Charger les bulletins
+                                </>
+                              )}
                             </button>
+                            {/* Bouton d'exportation avec icône */}
                             <button
-                              className="btn btn-outline-secondary btn-sm"
+                              className="btn btn-outline-success d-flex align-items-center"
                               disabled={loading || filteredRows.length === 0}
                               onClick={exportCSV}
                             >
-                              Export Excel (CSV)
+                              <i className="feather icon-download me-2"></i>
+                              Export Excel
                             </button>
+                            {/* Bouton d'impression avec icône */}
                             <button
-                              className="btn btn-outline-secondary btn-sm"
+                              className="btn btn-outline-info d-flex align-items-center"
                               disabled={loading || filteredRows.length === 0}
                               onClick={printAll}
                             >
+                              <i className="feather icon-printer me-2"></i>
                               Imprimer / PDF
                             </button>
                           </div>
                         </div>
 
-                        <div className="row g-2 mt-2">
-                          <div className="col-md-4">
-                            <label>Société</label>
+                        {/* Les filtres sont mieux présentés en une seule ligne */}
+                        <div className="row g-3">
+                          <div className="col-lg-4 col-md-6">
+                            <label className="form-label text-muted">Société</label>
                             <select
                               className="form-control"
                               value={societeId}
@@ -445,8 +468,8 @@ function BulletinsMois() {
                               ))}
                             </select>
                           </div>
-                          <div className="col-md-4">
-                            <label>Mois</label>
+                          <div className="col-lg-4 col-md-6">
+                            <label className="form-label text-muted">Mois de la paie</label>
                             <select
                               className="form-control"
                               value={moisPaieId}
@@ -463,11 +486,12 @@ function BulletinsMois() {
                                 ))}
                             </select>
                           </div>
-                          <div className="col-md-4">
-                            <label>Recherche (Nom / Prénom)</label>
+                          <div className="col-lg-4 col-md-12">
+                            <label className="form-label text-muted">Rechercher un employé</label>
                             <input
+                              type="text"
                               className="form-control"
-                              placeholder="Tapez pour filtrer…"
+                              placeholder="Tapez le nom ou prénom..."
                               value={searchName}
                               onChange={(e) => setSearchName(e.target.value)}
                             />
@@ -475,30 +499,54 @@ function BulletinsMois() {
                         </div>
                       </div>
 
-                      <div className="card p-3">
+                      {/* --- Résultats des bulletins --- */}
+                      <div className="card shadow-sm p-4">
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                          <h6 className="m-0 text-muted">
+                            <i className="feather icon-list me-1"></i>
+                            Résultats ({filteredRows.length})
+                          </h6>
+                          {/* Totaux agrégés en cartes pour une meilleure visibilité */}
+                          <div className="d-flex gap-3 flex-wrap justify-content-end">
+                            <div className="bg-light p-2 rounded-3 text-center">
+                              <small className="text-muted d-block">Total Net à Payer</small>
+                              <h5 className="mb-0 text-success fw-bold">{fmt(totals.net)} Ar</h5>
+                            </div>
+                            <div className="bg-light p-2 rounded-3 text-center">
+                              <small className="text-muted d-block">Total Brut</small>
+                              <h5 className="mb-0 text-info fw-bold">{fmt(totals.brut)} Ar</h5>
+                            </div>
+                          </div>
+                        </div>
+                        <hr className="my-3"/>
+
                         {loading && (
-                          <div className="alert alert-info py-2">
-                            Calcul en cours… {progress.done}/{progress.total}
+                          <div className="alert alert-info text-center py-3">
+                            <span className="spinner-grow spinner-grow-sm me-2" role="status" aria-hidden="true"></span>
+                            Calcul en cours…
                           </div>
                         )}
 
-                        {filteredRows.length === 0 ? (
-                          <p className="text-muted text-center mb-0">Aucune donnée à afficher.</p>
+                        {filteredRows.length === 0 && !loading ? (
+                          <div className="text-center py-5 text-muted">
+                            <i className="feather icon-alert-circle d-block mb-3" style={{ fontSize: '3rem' }}></i>
+                            <p className="mb-0">Aucun bulletin à afficher pour la sélection. <br/> Veuillez choisir une société et un mois, puis **Charger les bulletins**.</p>
+                          </div>
                         ) : (
                           <>
                             <div className="table-responsive">
-                              <table className="table table-hover">
-                                <thead className="thead-light">
+                              <table className="table table-hover table-striped">
+                                <thead className="table-light">
                                   <tr>
                                     <th>#</th>
                                     <th>Employé</th>
                                     <th>Catégorie</th>
-                                    <th>Total +</th>
-                                    <th>Total −</th>
-                                    <th>Brut</th>
-                                    <th>Net</th>
-                                    <th>État</th>
-                                    <th>Actions</th>
+                                    <th className="text-end">Total (+)</th>
+                                    <th className="text-end">Total (−)</th>
+                                    <th className="text-end">Brut</th>
+                                    <th className="text-end">Net à payer</th>
+                                    <th className="text-center">État</th>
+                                    <th className="text-center">Actions</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -508,39 +556,47 @@ function BulletinsMois() {
                                       return (
                                         <tr key={row.employer.id}>
                                           <td>{i + 1}</td>
-                                          <td>{labelName(row.employer)}</td>
-                                          <td>{labelCategorie(row.employer)}</td>
-                                          <td>{fmt(b.totalPlus)}</td>
-                                          <td>{fmt(b.totalMoins)}</td>
-                                          <td>{fmt(b.brut)}</td>
-                                          <td><strong>{fmt(b.netAPayer)}</strong></td>
-                                          <td><span className="badge bg-success">OK</span></td>
-                                          <td>
+                                          <td className="fw-bold">{labelName(row.employer)}</td>
+                                          <td className="text-muted">{labelCategorie(row.employer)}</td>
+                                          <td className="text-end">{fmt(b.totalPlus)}</td>
+                                          <td className="text-end">{fmt(b.totalMoins)}</td>
+                                          <td className="text-end">{fmt(b.brut)}</td>
+                                          <td className="text-end">
+                                            <span className="text-success fw-bold">{fmt(b.netAPayer)}</span>
+                                          </td>
+                                          <td className="text-center">
+                                            <span className="badge bg-success">OK</span>
+                                          </td>
+                                          <td className="text-center">
                                             <button
                                               className="btn btn-sm btn-outline-primary"
                                               onClick={() => openDetail(row)}
+                                              title="Voir les détails et imprimer ce bulletin"
                                             >
-                                              Voir / Imprimer
+                                              <i className="feather icon-eye"></i>
                                             </button>
                                           </td>
                                         </tr>
                                       );
                                     }
                                     return (
-                                      <tr key={row.employer.id} className="table-warning">
+                                      <tr key={row.employer.id} className="table-danger">
                                         <td>{i + 1}</td>
-                                        <td>{labelName(row.employer)}</td>
-                                        <td>{labelCategorie(row.employer)}</td>
-                                        <td colSpan={4} style={{ color: "#b00" }}>
+                                        <td className="fw-bold">{labelName(row.employer)}</td>
+                                        <td className="text-muted">{labelCategorie(row.employer)}</td>
+                                        <td colSpan={4} className="text-start fst-italic">
                                           Erreur de calcul : {row.error}
                                         </td>
-                                        <td><span className="badge bg-danger">ERREUR</span></td>
-                                        <td>
+                                        <td className="text-center">
+                                          <span className="badge bg-danger">ERREUR</span>
+                                        </td>
+                                        <td className="text-center">
                                           <button
                                             className="btn btn-sm btn-outline-secondary"
                                             onClick={() => openDetail(row)}
+                                            title="Afficher le message d'erreur"
                                           >
-                                            Détails
+                                            <i className="feather icon-info"></i>
                                           </button>
                                         </td>
                                       </tr>
@@ -548,12 +604,12 @@ function BulletinsMois() {
                                   })}
                                 </tbody>
                                 <tfoot>
-                                  <tr className="table-light">
+                                  <tr className="table-primary">
                                     <th colSpan="3" className="text-end">TOTALS</th>
-                                    <th>{fmt(totals.totalPlus)}</th>
-                                    <th>{fmt(totals.totalMoins)}</th>
-                                    <th>{fmt(totals.brut)}</th>
-                                    <th><strong>{fmt(totals.net)}</strong></th>
+                                    <th className="text-end">{fmt(totals.totalPlus)}</th>
+                                    <th className="text-end">{fmt(totals.totalMoins)}</th>
+                                    <th className="text-end">{fmt(totals.brut)}</th>
+                                    <th className="text-end">{fmt(totals.net)}</th>
                                     <th colSpan="2"></th>
                                   </tr>
                                 </tfoot>
@@ -591,12 +647,17 @@ function BulletinsMois() {
               <div className="modal-body">
                 {detailRow.bulletin && !detailRow.error ? (
                   <>
-                    <p className="text-muted small mb-2">
-                      CNAPS/OSTIE calculés en % du <em>SB</em>. IRSA calculée en % du <em>Brut imposable</em>.
+                    <div className="row row-cols-md-2 g-2 mb-3">
+                      <div className="col"><div className="p-2 bg-light rounded-3"><strong>Société:</strong> {labelSociete(societeId)}</div></div>
+                      <div className="col"><div className="p-2 bg-light rounded-3"><strong>Mois:</strong> {monthLabel(moisPaieId)}</div></div>
+                      <div className="col"><div className="p-2 bg-light rounded-3"><strong>Employé:</strong> {labelName(detailRow.employer)}</div></div>
+                      <div className="col"><div className="p-2 bg-light rounded-3"><strong>Catégorie:</strong> {labelCategorie(detailRow.employer)}</div></div>
+                    </div>
+                    <p className="text-muted small mb-3">
+                      <i className="feather icon-info me-1"></i> CNAPS/OSTIE calculés en % du <em>SB</em>. IRSA calculée en % du <em>Brut imposable</em>.
                     </p>
-
                     <div className="table-responsive">
-                      <table className="table table-hover">
+                      <table className="table table-hover table-sm">
                         <thead className="thead-light">
                           <tr>
                             <th>Code</th>
@@ -617,32 +678,32 @@ function BulletinsMois() {
                             </tr>
                           ))}
                         </tbody>
-                        <tfoot>
-                          <tr>
-                            <th colSpan="4" className="text-end">Total +</th>
-                            <th className="text-end">{fmt(detailRow.bulletin.totalPlus)}</th>
+                        <tfoot className="table-group-divider">
+                          <tr className="fw-bold table-light">
+                            <td colSpan="4" className="text-end">Total +</td>
+                            <td className="text-end">{fmt(detailRow.bulletin.totalPlus)}</td>
                           </tr>
-                          <tr>
-                            <th colSpan="4" className="text-end">Total −</th>
-                            <th className="text-end">{fmt(detailRow.bulletin.totalMoins)}</th>
+                          <tr className="fw-bold table-light">
+                            <td colSpan="4" className="text-end">Total −</td>
+                            <td className="text-end">{fmt(detailRow.bulletin.totalMoins)}</td>
                           </tr>
-                          <tr className="table-info">
-                            <th colSpan="4" className="text-end">Brut imposable</th>
-                            <th className="text-end">{fmt(detailRow.bulletin.brutImposable ?? 0)}</th>
+                          <tr className="fw-bold table-info">
+                            <td colSpan="4" className="text-end">Brut imposable</td>
+                            <td className="text-end">{fmt(detailRow.bulletin.brutImposable ?? 0)}</td>
                           </tr>
                           {detailRow.bulletin.irsa != null && (
-                            <tr className="table-warning">
-                              <th colSpan="4" className="text-end">IRSA (incluse dans les −)</th>
-                              <th className="text-end">{fmt(detailRow.bulletin.irsa)}</th>
+                            <tr className="fw-bold table-warning">
+                              <td colSpan="4" className="text-end">IRSA (incluse dans les −)</td>
+                              <td className="text-end">{fmt(detailRow.bulletin.irsa)}</td>
                             </tr>
                           )}
-                          <tr className="table-primary">
-                            <th colSpan="4" className="text-end">Brut</th>
-                            <th className="text-end">{fmt(detailRow.bulletin.brut)}</th>
+                          <tr className="fw-bold table-primary">
+                            <td colSpan="4" className="text-end">Brut</td>
+                            <td className="text-end">{fmt(detailRow.bulletin.brut)}</td>
                           </tr>
-                          <tr className="table-success">
-                            <th colSpan="4" className="text-end">Net à payer</th>
-                            <th className="text-end">{fmt(detailRow.bulletin.netAPayer)}</th>
+                          <tr className="fw-bold table-success">
+                            <td colSpan="4" className="text-end">Net à payer</td>
+                            <td className="text-end">{fmt(detailRow.bulletin.netAPayer)}</td>
                           </tr>
                         </tfoot>
                       </table>
@@ -650,40 +711,14 @@ function BulletinsMois() {
                   </>
                 ) : (
                   <div className="alert alert-warning mb-0">
-                    {detailRow.error || "Aucun détail disponible."}
+                    <h6 className="alert-heading">Erreur de calcul</h6>
+                    <p className="mb-0">{detailRow.error || "Aucun détail disponible."}</p>
                   </div>
                 )}
               </div>
-              <div className="modal-footer">
-                <button
-                  className="btn btn-outline-secondary"
-                  onClick={() => {
-                    const w = window.open("", "_blank");
-                    if (!w) return;
-                    const body = document.querySelector(".modal-body");
-                    const html = body ? body.innerHTML : "";
-                    w.document.write(`
-                      <html>
-                        <head>
-                          <title>Bulletin — ${labelName(detailRow.employer)}</title>
-                          <style>
-                            body { font-family: Arial, sans-serif; padding: 12px; }
-                            table { width: 100%; border-collapse: collapse; margin: 12px 0; }
-                            th, td { border: 1px solid #999; padding: 6px 8px; font-size: 12px; }
-                            th { background: #f2f2f2; text-align: left; }
-                            .text-end { text-align: right; }
-                          </style>
-                        </head>
-                        <body>
-                          <h3>Bulletin — ${labelName(detailRow.employer)} (${labelCategorie(detailRow.employer)}) — ${monthLabel(moisPaieId)}</h3>
-                          ${html}
-                        </body>
-                      </html>`);
-                    w.document.close();
-                    w.focus();
-                    w.print();
-                  }}
-                >
+              <div className="modal-footer d-flex justify-content-between">
+                <button className="btn btn-outline-info" onClick={printAll}>
+                  <i className="feather icon-printer me-2"></i>
                   Imprimer ce bulletin
                 </button>
                 <button className="btn btn-primary" onClick={() => setShowDetail(false)}>Fermer</button>

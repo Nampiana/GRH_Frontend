@@ -10,164 +10,39 @@ import IndividuServices from "../../services/individu/individuService";
 import CategorieServices from "../../services/categorie/categorie";
 import SocieteServices from "../../services/societe/societeService";
 
-function MesBulletins() {
-    useTemplateScripts();
+// Helper pour formater les nombres
+const formatNumber = (n) => (n == null ? "" : Number(n).toLocaleString("fr-FR"));
 
-    // --- Utilisateur connecté (supposé stocké en localStorage)
-    const [user, setUser] = useState({ id: "", roles: 3, societe: "" });
-    useEffect(() => {
-        const u = JSON.parse(localStorage.getItem("user"));
-        if (u) setUser({ id: u.idUtilisateur, roles: u.roles, societe: u.societe });
-    }, []);
+// Helper pour détecter si un mois est clôturé
+const isMonthClosed = (month) => {
+    if (!month) return false;
+    // Gère les différents formats de statut de clôture
+    const status = (month.cloture || month.statut || month.status || "").toString().toUpperCase();
+    return status === "CLOTURE" || status === "CLOSED" || month.cloture === true;
+};
 
-    // --- Référentiels
-    const [societe, setSociete] = useState(null);
-    const [moisList, setMoisList] = useState([]);
-    const [employer, setEmployer] = useState(null);
-    const [individu, setIndividu] = useState(null);
-    const [categorie, setCategorie] = useState(null);
+// Composant pour afficher les détails du bulletin
+const BulletinDisplay = ({ bulletin, moisPaieId, labelPeriode, labelMoi, labelCategorie, labelSociete }) => {
+    if (!bulletin) {
+        return <p className="text-muted mb-0">Aucun bulletin à afficher.</p>;
+    }
 
-    // --- Sélection
-    const [moisPaieId, setMoisPaieId] = useState("");
-
-    // --- Bulletin courant
-    const [bulletin, setBulletin] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [infoMsg, setInfoMsg] = useState("");
-
-    const toArray = (data) => (Array.isArray(data) ? data : data?.content || []);
-
-    // Helpers format
-    const fmt = (n) => (n == null ? "" : Number(n).toLocaleString("fr-FR"));
-
-    // Détecter si un MoisPaie est clôturé (plusieurs variantes supportées)
-    const isClosed = (m) => {
-        if (!m) return false;
-        if (typeof m.cloture === "boolean") return m.cloture;
-        const s = (m.statut || m.status || "").toString().toUpperCase();
-        if (s === "CLOTURE" || s === "CLOSED") return true;
-        // fallback: pas d’info => on considère non-clôturé (la sélection utilisera un autre fallback si aucun n’est closed)
-        return false;
-    };
-
-    // Charger référentiels de base
-    useEffect(() => {
-        // Société (facultatif, juste pour libellé)
-        SocieteServices.getAll()
-            .then((res) => {
-                const arr = toArray(res.data);
-                const s = arr.find((x) => x.id === user.societe) || null;
-                setSociete(s);
-            })
-            .catch(() => { });
-
-        // Mois de paie
-        MoisPaieService.getAll()
-            .then((r) => setMoisList(toArray(r.data)))
-            .catch(console.error);
-    }, [user.societe]);
-
-    // Récupérer l’employé lié à cet utilisateur
-    useEffect(() => {
-        if (!user?.id) return;
-
-        // 1) Essai direct via /by-utilisateur/{idUtilisateur}
-        EmployerSocieteService.getByUtilisateur(user.id)
-            .then((r) => {
-                if (r?.data?.id) {
-                    setEmployer(r.data);
-                } else {
-                    throw new Error("NotFound");
-                }
-            })
-            .catch(() => {
-                // 2) Fallback: on prend dans /employer-societe et on filtre
-                EmployerSocieteService.getAll()
-                    .then((res) => {
-                        const arr = toArray(res.data);
-                        const me = arr.find((e) => e.idUtilisateur === user.id);
-                        if (me) setEmployer(me);
-                    })
-                    .catch(console.error);
-            });
-    }, [user.id]);
-
-    // Charger Individu + Catégorie pour le libellé
-    useEffect(() => {
-        if (!employer?.id) return;
-
-        IndividuServices.getAll()
-            .then((res) => {
-                const arr = toArray(res.data);
-                setIndividu(arr.find((i) => i.id === employer.idIndividue) || null);
-            })
-            .catch(() => { });
-
-        CategorieServices.getAll()
-            .then((res) => {
-                const arr = toArray(res.data);
-                setCategorie(arr.find((c) => c.id === employer.idCategorie) || null);
-            })
-            .catch(() => { });
-    }, [employer]);
-
-    // Options de mois visibles par l’employé — uniquement les clôturés si dispo.
-    const closedMonths = useMemo(() => moisList.filter(isClosed), [moisList]);
-
-    const monthOptions = useMemo(() => {
-        // S’il existe au moins un mois “clôturé” => n’afficher que ceux-là
-        if (closedMonths.length > 0) {
-            return closedMonths.slice().sort((a, b) => (b.periode || "").localeCompare(a.periode || ""));
-        }
-        // sinon (backend pas patché) => afficher tous (mais on affichera un bandeau d’avertissement)
-        return moisList.slice().sort((a, b) => (b.periode || "").localeCompare(a.periode || ""));
-    }, [moisList, closedMonths]);
-
-    // Label utils
-    const labelSociete = societe?.nomSociete || "Ma société";
-    const labelMoi = `${individu?.nom || ""} ${individu?.prenom || ""}`.trim() || "Moi";
-    const labelCategorie = categorie?.nomCategorie || "N/A";
-    const labelPeriode = (id) => monthOptions.find((m) => m.id === id)?.periode || id || "";
-
-    // Charger le bulletin
-    const loadBulletin = () => {
-        if (!employer?.id || !moisPaieId) return;
-        // Si on a la notion de clôture, empêcher l’accès si non clôturé
-        const month = moisList.find((m) => m.id === moisPaieId);
-        if (month && closedMonths.length > 0 && !isClosed(month)) {
-            setInfoMsg("Ce mois n’est pas encore clôturé. Le bulletin sera visible après clôture.");
-            setBulletin(null);
-            return;
-        }
-        setInfoMsg("");
-        setLoading(true);
-        setBulletin(null);
-        PaieService.calculer(employer.id, moisPaieId)
-            .then((res) => setBulletin(res.data))
-            .catch((err) => {
-                const msg = err?.response?.data?.error || err?.message || "Erreur de calcul";
-                setInfoMsg(msg);
-            })
-            .finally(() => setLoading(false));
-    };
-
-    // Export CSV
     const exportCSV = () => {
-        if (!bulletin) return;
         const headers = ["Société", "Période", "Employé", "Catégorie", "Code", "Libellé", "Op", "Taux%", "Montant"];
         const lines = [headers.join(";")];
+        const replaceSemicolon = (text) => (String(text) || "").replace(/;/g, ",");
 
         (bulletin.lignes || []).forEach((l) => {
             lines.push([
-                labelSociete,
-                labelPeriode(moisPaieId),
-                labelMoi.replace(/;/g, ","),
-                labelCategorie.replace(/;/g, ","),
-                l.code,
-                (l.libelle || "").replace(/;/g, ","),
+                replaceSemicolon(labelSociete),
+                replaceSemicolon(labelPeriode(moisPaieId)),
+                replaceSemicolon(labelMoi),
+                replaceSemicolon(labelCategorie),
+                replaceSemicolon(l.code),
+                replaceSemicolon(l.libelle),
                 l.operation === 1 ? "+" : "-",
                 l.taux ?? "",
-                l.montant ?? 0
+                l.montant ?? 0,
             ].join(";"));
         });
 
@@ -186,82 +61,291 @@ function MesBulletins() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        const fn = `Bulletin_${labelPeriode(moisPaieId)}_${labelMoi.replace(/\s+/g, "_")}.csv`;
+        const fn = `Bulletin_${labelPeriode(moisPaieId).replace(/\s+/g, "_")}_${labelMoi.replace(/\s+/g, "_")}.csv`;
         a.download = fn;
         a.click();
         URL.revokeObjectURL(url);
     };
 
-    // Impression simple (navigateur)
     const printBulletin = () => {
-        if (!bulletin) return;
-        const escapeHtml = (txt) =>
-            String(txt || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
+        const escapeHtml = (text) => String(text || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         const head = `
-      <style>
-        body { font-family: Arial, sans-serif; padding: 12px; }
-        h2,h3 { margin: 0 0 8px; }
-        table { width: 100%; border-collapse: collapse; margin: 12px 0; }
-        th, td { border: 1px solid #999; padding: 6px 8px; font-size: 12px; }
-        th { background: #f2f2f2; text-align: left; }
-        .text-end { text-align: right; }
-      </style>
-    `;
+            <style>
+                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; color: #333; }
+                .header-info { text-align: center; margin-bottom: 20px; }
+                h2, h3 { margin: 0; color: #0056b3; }
+                h3 { font-weight: 400; font-size: 1.2rem; }
+                table { width: 100%; border-collapse: collapse; margin-top: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+                th, td { border: 1px solid #ddd; padding: 12px 15px; font-size: 14px; text-align: left; }
+                th { background-color: #f8f9fa; font-weight: 600; color: #495057; }
+                tr:nth-child(even) { background-color: #f2f2f2; }
+                .text-end { text-align: right; }
+                .table-info th { background-color: #e9ecef; }
+                .table-warning th { background-color: #fff3cd; }
+                .table-success th { background-weight: bold; font-size: 1.1em; background-color: #d4edda; color: #155724; }
+                .btn { display: none; }
+            </style>
+        `;
 
-        const lignes = (bulletin.lignes || [])
-            .map(
-                (l) => `<tr>
-          <td>${escapeHtml(l.code)}</td>
-          <td>${escapeHtml(l.libelle)}</td>
-          <td>${l.operation === 1 ? "+" : "-"}</td>
-          <td>${l.taux != null ? l.taux : ""}</td>
-          <td class="text-end">${fmt(l.montant)}</td>
-        </tr>`
-            )
-            .join("");
+        const lignes = (bulletin.lignes || []).map((l) => `
+            <tr>
+                <td>${escapeHtml(l.code)}</td>
+                <td>${escapeHtml(l.libelle)}</td>
+                <td>${l.operation === 1 ? "+" : "-"}</td>
+                <td>${l.taux != null ? l.taux : ""}</td>
+                <td class="text-end">${formatNumber(l.montant)}</td>
+            </tr>
+        `).join("");
 
         const extraRows = `
-      ${"brutImposable" in bulletin
-                ? `<tr><th colspan="4" class="text-end">Brut imposable</th><th class="text-end">${fmt(bulletin.brutImposable ?? 0)}</th></tr>`
-                : ""}
-      ${"irsa" in bulletin && bulletin.irsa != null
-                ? `<tr><th colspan="4" class="text-end">IRSA</th><th class="text-end">${fmt(bulletin.irsa ?? 0)}</th></tr>`
-                : ""}
-    `;
+            ${"brutImposable" in bulletin ? `<tr class="table-info"><th colspan="4" class="text-end">Brut imposable</th><th class="text-end">${formatNumber(bulletin.brutImposable ?? 0)}</th></tr>` : ""}
+            ${"irsa" in bulletin && bulletin.irsa != null ? `<tr class="table-warning"><th colspan="4" class="text-end">IRSA</th><th class="text-end">${formatNumber(bulletin.irsa ?? 0)}</th></tr>` : ""}
+        `;
 
         const html = `
-      <h2>${escapeHtml(labelSociete)}</h2>
-      <h3>Bulletin de paie — ${escapeHtml(labelMoi)} (${escapeHtml(labelCategorie)}) — ${escapeHtml(labelPeriode(moisPaieId))}</h3>
+            <div class="header-info">
+                <h2>${escapeHtml(labelSociete)}</h2>
+                <h3>Bulletin de paie — ${escapeHtml(labelMoi)} (${escapeHtml(labelCategorie)}) — ${escapeHtml(labelPeriode(moisPaieId))}</h3>
+            </div>
+            <table>
+                <thead>
+                    <tr><th>Code</th><th>Libellé</th><th>Op</th><th>Taux %</th><th>Montant</th></tr>
+                </thead>
+                <tbody>${lignes}</tbody>
+                <tfoot>
+                    <tr><th colspan="4" class="text-end">Total +</th><th class="text-end">${formatNumber(bulletin.totalPlus)}</th></tr>
+                    <tr><th colspan="4" class="text-end">Total −</th><th class="text-end">${formatNumber(bulletin.totalMoins)}</th></tr>
+                    ${extraRows}
+                    <tr class="table-primary"><th colspan="4" class="text-end">Brut</th><th class="text-end">${formatNumber(bulletin.brut)}</th></tr>
+                    <tr class="table-success"><th colspan="4" class="text-end">Net à payer</th><th class="text-end"><strong>${formatNumber(bulletin.netAPayer)}</strong></th></tr>
+                </tfoot>
+            </table>
+        `;
 
-      <table>
-        <thead>
-          <tr><th>Code</th><th>Libellé</th><th>Op</th><th>Taux%</th><th>Montant</th></tr>
-        </thead>
-        <tbody>${lignes}</tbody>
-        <tfoot>
-          <tr><th colspan="4" class="text-end">Total +</th><th class="text-end">${fmt(bulletin.totalPlus)}</th></tr>
-          <tr><th colspan="4" class="text-end">Total −</th><th class="text-end">${fmt(bulletin.totalMoins)}</th></tr>
-          ${extraRows}
-          <tr><th colspan="4" class="text-end">Brut</th><th class="text-end">${fmt(bulletin.brut)}</th></tr>
-          <tr><th colspan="4" class="text-end">Net à payer</th><th class="text-end"><strong>${fmt(bulletin.netAPayer)}</strong></th></tr>
-        </tfoot>
-      </table>
-    `;
-
-        const w = window.open("", "_blank");
+        const w = window.open("", "_blank", "width=800,height=600");
         if (!w) return;
-        w.document.write(`<html><head><title>Bulletin</title>${head}</head><body>${html}</body></html>`);
+        w.document.write(`<html><head><title>Bulletin de paie</title>${head}</head><body>${html}</body></html>`);
         w.document.close();
         w.focus();
-        w.print();
+        setTimeout(() => {
+            w.print();
+            w.close();
+        }, 500); // Délai pour s'assurer que le contenu est rendu
     };
 
-    // Message d’avertissement si API ne renvoie pas l’info “clôture”
-    const showNoClosureFlagInfo = useMemo(
-        () => closedMonths.length === 0 && moisList.length > 0,
-        [closedMonths.length, moisList.length]
+    return (
+        <>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+                <h6 className="mb-0 text-primary fw-bold">Bulletin — {labelPeriode(moisPaieId)}</h6>
+                <div className="d-flex gap-2">
+                    <button className="btn btn-outline-secondary btn-sm" onClick={exportCSV}>
+                        <i className="feather icon-download me-1"></i> Export CSV
+                    </button>
+                    <button className="btn btn-outline-primary btn-sm" onClick={printBulletin}>
+                        <i className="feather icon-printer me-1"></i> Imprimer / PDF
+                    </button>
+                </div>
+            </div>
+
+            <div className="table-responsive">
+                <table className="table table-hover table-striped">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Libellé</th>
+                            <th>Op</th>
+                            <th>Taux %</th>
+                            <th className="text-end">Montant</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {(bulletin.lignes || []).map((l, i) => (
+                            <tr key={i}>
+                                <td>{l.code}</td>
+                                <td>{l.libelle}</td>
+                                <td>{l.operation === 1 ? "+" : "-"}</td>
+                                <td>{l.taux != null ? l.taux : ""}</td>
+                                <td className="text-end">{formatNumber(l.montant)}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                    <tfoot>
+                        <tr className="table-primary">
+                            <th colSpan="4" className="text-end">Total +</th>
+                            <th className="text-end">{formatNumber(bulletin.totalPlus)}</th>
+                        </tr>
+                        <tr className="table-danger">
+                            <th colSpan="4" className="text-end">Total −</th>
+                            <th className="text-end">{formatNumber(bulletin.totalMoins)}</th>
+                        </tr>
+                        {"brutImposable" in bulletin && (
+                            <tr className="table-info">
+                                <th colSpan="4" className="text-end">Brut imposable</th>
+                                <th className="text-end">{formatNumber(bulletin.brutImposable ?? 0)}</th>
+                            </tr>
+                        )}
+                        {"irsa" in bulletin && bulletin.irsa != null && (
+                            <tr className="table-warning">
+                                <th colSpan="4" className="text-end">IRSA</th>
+                                <th className="text-end">{formatNumber(bulletin.irsa ?? 0)}</th>
+                            </tr>
+                        )}
+                        <tr className="table-success">
+                            <th colSpan="4" className="text-end fs-5">Net à payer</th>
+                            <th className="text-end fs-5"><strong>{formatNumber(bulletin.netAPayer)}</strong></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </>
     );
+};
+
+function MesBulletins() {
+    useTemplateScripts();
+
+    const [user, setUser] = useState(null);
+    const [references, setReferences] = useState({
+        societe: null,
+        moisList: [],
+        employer: null,
+        individu: null,
+        categorie: null,
+    });
+    const [bulletinState, setBulletinState] = useState({
+        moisPaieId: "",
+        bulletin: null,
+        loading: false,
+        infoMsg: "",
+    });
+
+    // Charger l'utilisateur au démarrage
+    useEffect(() => {
+        const storedUser = JSON.parse(localStorage.getItem("user"));
+        if (storedUser) {
+            setUser({ id: storedUser.idUtilisateur, roles: storedUser.roles, societe: storedUser.societe });
+        }
+    }, []);
+
+    // Charger les références (société, mois)
+    useEffect(() => {
+        const fetchReferences = async () => {
+            try {
+                const [societeRes, moisRes] = await Promise.all([
+                    SocieteServices.getAll(),
+                    MoisPaieService.getAll(),
+                ]);
+                const moisData = Array.isArray(moisRes.data) ? moisRes.data : moisRes.data?.content || [];
+                const societeData = Array.isArray(societeRes.data) ? societeRes.data : societeRes.data?.content || [];
+
+                setReferences((prev) => ({
+                    ...prev,
+                    moisList: moisData,
+                    societe: societeData.find((s) => s.id === user?.societe) || null,
+                }));
+            } catch (error) {
+                console.error("Erreur lors du chargement des références", error);
+            }
+        };
+
+        if (user) {
+            fetchReferences();
+        }
+    }, [user]);
+
+    // Charger les données de l'employé, de l'individu et de la catégorie
+    useEffect(() => {
+        const fetchEmployeeData = async () => {
+            if (!user?.id) return;
+
+            try {
+                // Tente de récupérer l'employé directement
+                let employerData;
+                try {
+                    const res = await EmployerSocieteService.getByUtilisateur(user.id);
+                    employerData = res?.data?.id ? res.data : null;
+                } catch {
+                    // Fallback si la première méthode échoue
+                    const res = await EmployerSocieteService.getAll();
+                    const allEmployers = Array.isArray(res.data) ? res.data : res.data?.content || [];
+                    employerData = allEmployers.find((e) => e.idUtilisateur === user.id);
+                }
+
+                if (employerData) {
+                    const [individuRes, categorieRes] = await Promise.all([
+                        IndividuServices.getAll(),
+                        CategorieServices.getAll(),
+                    ]);
+                    const allIndividus = Array.isArray(individuRes.data) ? individuRes.data : individuRes.data?.content || [];
+                    const allCategories = Array.isArray(categorieRes.data) ? categorieRes.data : categorieRes.data?.content || [];
+
+                    setReferences((prev) => ({
+                        ...prev,
+                        employer: employerData,
+                        individu: allIndividus.find((i) => i.id === employerData.idIndividue) || null,
+                        categorie: allCategories.find((c) => c.id === employerData.idCategorie) || null,
+                    }));
+                }
+            } catch (error) {
+                console.error("Erreur lors du chargement des données de l'employé", error);
+            }
+        };
+
+        if (user?.id) {
+            fetchEmployeeData();
+        }
+    }, [user]);
+
+    // Déterminer les mois disponibles pour la sélection
+    const monthOptions = useMemo(() => {
+        const closedMonths = references.moisList.filter(isMonthClosed);
+        const sortedMonths = (closedMonths.length > 0 ? closedMonths : references.moisList)
+            .slice()
+            .sort((a, b) => (b.periode || "").localeCompare(a.periode || ""));
+        return sortedMonths;
+    }, [references.moisList]);
+
+    // Helpers pour les libellés
+    const labelSociete = references.societe?.nomSociete || "Ma société";
+    const labelMoi = `${references.individu?.nom || ""} ${references.individu?.prenom || ""}`.trim() || "Moi";
+    const labelCategorie = references.categorie?.nomCategorie || "N/A";
+    const labelPeriode = (id) => monthOptions.find((m) => m.id === id)?.periode || id || "";
+
+    // Gérer la sélection du mois
+    const handleMonthChange = (e) => {
+        setBulletinState(prev => ({ ...prev, moisPaieId: e.target.value, bulletin: null, infoMsg: "" }));
+    };
+
+    // Charger le bulletin de paie
+    const loadBulletin = async () => {
+        const { moisPaieId } = bulletinState;
+        if (!references.employer?.id || !moisPaieId) return;
+
+        setBulletinState(prev => ({ ...prev, loading: true, infoMsg: "", bulletin: null }));
+        const selectedMonth = references.moisList.find((m) => m.id === moisPaieId);
+
+        if (references.moisList.some(isMonthClosed) && !isMonthClosed(selectedMonth)) {
+            setBulletinState(prev => ({
+                ...prev,
+                infoMsg: "Ce mois n’est pas encore clôturé. Le bulletin sera visible après clôture.",
+                loading: false,
+            }));
+            return;
+        }
+
+        try {
+            const res = await PaieService.calculer(references.employer.id, moisPaieId);
+            setBulletinState(prev => ({ ...prev, bulletin: res.data, infoMsg: "" }));
+        } catch (err) {
+            const msg = err?.response?.data?.error || err?.message || "Erreur lors du calcul du bulletin. Veuillez réessayer plus tard.";
+            setBulletinState(prev => ({ ...prev, infoMsg: msg }));
+        } finally {
+            setBulletinState(prev => ({ ...prev, loading: false }));
+        }
+    };
+
+    const showNoClosureFlagInfo = references.moisList.length > 0 && !references.moisList.some(isMonthClosed);
+    const isLoadingEmployeeData = !references.employer;
 
     return (
         <div id="pcoded" className="pcoded">
@@ -276,152 +360,88 @@ function MesBulletins() {
                                     <div className="page-wrapper">
                                         <div className="page-body">
 
-                                            <div className="card p-3 mb-3">
-                                                <h5>Mes bulletins de paie</h5>
-                                                <p className="text-muted mb-2">
+                                            <div className="card p-4 shadow-sm">
+                                                <h4 className="mb-2 fw-bold text-dark">Mes bulletins de paie</h4>
+                                                <p className="text-muted mb-4">
                                                     Visualisez vos bulletins par période. Les bulletins sont visibles <b>après clôture du mois</b>.
                                                 </p>
 
                                                 {showNoClosureFlagInfo && (
-                                                    <div className="alert alert-warning py-2">
-                                                        Votre API ne renvoie pas l’état de <b>clôture</b> des mois (champs <code>cloture</code> / <code>statut</code>).
-                                                        Par défaut, tous les mois sont proposés. Ajoutez un indicateur de clôture côté backend pour restreindre l’accès.
+                                                    <div className="alert alert-warning border-0 d-flex align-items-center py-2">
+                                                        <i className="feather icon-alert-triangle me-2"></i>
+                                                        <div>
+                                                            Votre API ne renvoie pas l’état de clôture des mois. Tous les mois sont affichés.
+                                                            Ajoutez un indicateur de clôture côté backend pour une meilleure gestion.
+                                                        </div>
                                                     </div>
                                                 )}
 
-                                                {!employer ? (
-                                                    <div className="alert alert-info py-2">
-                                                        Chargement de votre profil employé…
+                                                <div className="row g-3">
+                                                    <div className="col-md-4">
+                                                        <label className="form-label fw-bold">Société</label>
+                                                        <input className="form-control" value={labelSociete} disabled />
                                                     </div>
-                                                ) : (
-                                                    <div className="row g-2 mt-2">
-                                                        <div className="col-md-4">
-                                                            <label>Société</label>
-                                                            <input className="form-control" value={labelSociete} disabled />
-                                                        </div>
-                                                        <div className="col-md-4">
-                                                            <label>Employé</label>
-                                                            <input className="form-control" value={labelMoi} disabled />
-                                                        </div>
-                                                        <div className="col-md-4">
-                                                            <label>Catégorie</label>
-                                                            <input className="form-control" value={labelCategorie} disabled />
-                                                        </div>
+                                                    <div className="col-md-4">
+                                                        <label className="form-label fw-bold">Employé</label>
+                                                        <input className="form-control" value={labelMoi} disabled />
                                                     </div>
-                                                )}
+                                                    <div className="col-md-4">
+                                                        <label className="form-label fw-bold">Catégorie</label>
+                                                        <input className="form-control" value={labelCategorie} disabled />
+                                                    </div>
+                                                </div>
                                             </div>
 
-                                            {/* Sélecteur de période */}
-                                            <div className="card p-3 mb-3">
-                                                <div className="row g-2 align-items-end">
-                                                    <div className="col-md-6">
-                                                        <label>Période</label>
+                                            <div className="card p-4 shadow-sm mt-3">
+                                                <div className="d-flex flex-column flex-md-row align-items-md-end gap-3">
+                                                    <div className="flex-grow-1">
+                                                        <label className="form-label fw-bold">Période</label>
                                                         <select
-                                                            className="form-control"
-                                                            value={moisPaieId}
-                                                            onChange={(e) => setMoisPaieId(e.target.value)}
-                                                            disabled={!employer}
+                                                            className="form-select"
+                                                            value={bulletinState.moisPaieId}
+                                                            onChange={handleMonthChange}
+                                                            disabled={isLoadingEmployeeData}
                                                         >
-                                                            <option value="">— Sélectionner —</option>
+                                                            <option value="">— Sélectionner une période —</option>
                                                             {monthOptions.map((m) => (
                                                                 <option key={m.id} value={m.id}>
-                                                                    {m.periode}{isClosed(m) ? " — (Clôturé)" : ""}
+                                                                    {m.periode}{isMonthClosed(m) ? " — Clôturé" : ""}
                                                                 </option>
                                                             ))}
                                                         </select>
                                                     </div>
-                                                    <div className="col-md-6 text-end">
-                                                        <button
-                                                            className="btn btn-primary"
-                                                            onClick={loadBulletin}
-                                                            disabled={!moisPaieId || !employer || loading}
-                                                        >
-                                                            {loading ? "Chargement…" : "Voir mon bulletin"}
-                                                        </button>
-                                                    </div>
+                                                    <button
+                                                        className="btn btn-primary"
+                                                        onClick={loadBulletin}
+                                                        disabled={!bulletinState.moisPaieId || isLoadingEmployeeData || bulletinState.loading}
+                                                    >
+                                                        {bulletinState.loading ? (
+                                                            <>
+                                                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                                                Chargement…
+                                                            </>
+                                                        ) : (
+                                                            "Voir mon bulletin"
+                                                        )}
+                                                    </button>
                                                 </div>
 
-                                                {infoMsg && (
-                                                    <div className="alert alert-warning mt-2 mb-0 py-2">{infoMsg}</div>
+                                                {bulletinState.infoMsg && (
+                                                    <div className="alert alert-info mt-3 mb-0 py-2">
+                                                        {bulletinState.infoMsg}
+                                                    </div>
                                                 )}
                                             </div>
 
-                                            {/* Résultat */}
-                                            <div className="card p-3">
-                                                {!bulletin ? (
-                                                    <p className="text-muted mb-0">Aucun bulletin à afficher.</p>
-                                                ) : (
-                                                    <>
-                                                        <div className="d-flex justify-content-between align-items-center mb-2">
-                                                            <h6 className="mb-0">
-                                                                Bulletin — {labelPeriode(moisPaieId)}
-                                                            </h6>
-                                                            <div className="d-flex gap-2">
-                                                                <button className="btn btn-outline-secondary btn-sm" onClick={exportCSV}>
-                                                                    Export CSV
-                                                                </button>
-                                                                <button className="btn btn-outline-secondary btn-sm" onClick={printBulletin}>
-                                                                    Imprimer / PDF
-                                                                </button>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="table-responsive">
-                                                            <table className="table table-hover">
-                                                                <thead>
-                                                                    <tr>
-                                                                        <th>Code</th>
-                                                                        <th>Libellé</th>
-                                                                        <th>Op</th>
-                                                                        <th>Taux %</th>
-                                                                        <th className="text-end">Montant</th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                    {(bulletin.lignes || []).map((l, i) => (
-                                                                        <tr key={i}>
-                                                                            <td>{l.code}</td>
-                                                                            <td>{l.libelle}</td>
-                                                                            <td>{l.operation === 1 ? "+" : "-"}</td>
-                                                                            <td>{l.taux != null ? l.taux : ""}</td>
-                                                                            <td className="text-end">{fmt(l.montant)}</td>
-                                                                        </tr>
-                                                                    ))}
-                                                                </tbody>
-                                                                <tfoot>
-                                                                    <tr>
-                                                                        <th colSpan="4" className="text-end">Total +</th>
-                                                                        <th className="text-end">{fmt(bulletin.totalPlus)}</th>
-                                                                    </tr>
-                                                                    <tr>
-                                                                        <th colSpan="4" className="text-end">Total −</th>
-                                                                        <th className="text-end">{fmt(bulletin.totalMoins)}</th>
-                                                                    </tr>
-                                                                    {"brutImposable" in bulletin && (
-                                                                        <tr className="table-info">
-                                                                            <th colSpan="4" className="text-end">Brut imposable</th>
-                                                                            <th className="text-end">{fmt(bulletin.brutImposable ?? 0)}</th>
-                                                                        </tr>
-                                                                    )}
-                                                                    {"irsa" in bulletin && bulletin.irsa != null && (
-                                                                        <tr className="table-warning">
-                                                                            <th colSpan="4" className="text-end">IRSA</th>
-                                                                            <th className="text-end">{fmt(bulletin.irsa ?? 0)}</th>
-                                                                        </tr>
-                                                                    )}
-                                                                    <tr className="table-primary">
-                                                                        <th colSpan="4" className="text-end">Brut</th>
-                                                                        <th className="text-end">{fmt(bulletin.brut)}</th>
-                                                                    </tr>
-                                                                    <tr className="table-success">
-                                                                        <th colSpan="4" className="text-end">Net à payer</th>
-                                                                        <th className="text-end"><strong>{fmt(bulletin.netAPayer)}</strong></th>
-                                                                    </tr>
-                                                                </tfoot>
-                                                            </table>
-                                                        </div>
-                                                    </>
-                                                )}
+                                            <div className="card p-4 shadow-sm mt-3">
+                                                <BulletinDisplay
+                                                    bulletin={bulletinState.bulletin}
+                                                    moisPaieId={bulletinState.moisPaieId}
+                                                    labelPeriode={labelPeriode}
+                                                    labelMoi={labelMoi}
+                                                    labelCategorie={labelCategorie}
+                                                    labelSociete={labelSociete}
+                                                />
                                             </div>
 
                                         </div>
