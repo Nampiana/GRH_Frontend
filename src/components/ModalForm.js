@@ -41,7 +41,6 @@ const ModalForm = ({ show, handleClose, formData, handleInputChange, handleCreat
                   />
                 </div>
               )}
-              {user.roles === 1 && (
                 <div className="col-md-6">
                   <label className="form-label">Rôle</label>
                   <select className="form-select" name="role" value={formData.role} onChange={handleInputChange}>
@@ -49,7 +48,6 @@ const ModalForm = ({ show, handleClose, formData, handleInputChange, handleCreat
                     <option value={3}>Employé</option>
                   </select>
                 </div>
-              )}
               <div className="col-md-6">
                 <label className="form-label">Société</label>
                 <select className="form-select" name="idSociete" value={formData.idSociete} onChange={handleInputChange}>
