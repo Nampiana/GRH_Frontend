@@ -138,6 +138,7 @@ function Sidebar() {
                     icon: faChartPie,
                     items: [
                         { to: "/turnover", icon: faChartPie, label: "Analyse Turnover" },
+                        { to: "/turnover2", icon: faChartPie, label: "Analyse Turnover 2" },
                     ],
                 },
             ];

@@ -26,6 +26,7 @@ import MoisPaie from "./pages/paie/MoisPaie";
 import Bulletin from "./pages/paie/BulletinsMois";
 import MesBulletin from "./pages/paie/MesBulletins";
 import Turnover from "./pages/turnover/TurnoverPage";
+import Turnover2 from "./pages/turnover2/Turnover";
 
 
 function App() {
@@ -97,6 +98,9 @@ function App() {
 
           {/* Routes des TURNOVER*/}
           <Route path="/turnover" element={<Turnover />} />
+
+          {/* Routes des TURNOVER2*/}
+          <Route path="/turnover2" element={<Turnover2 />} />
 
         </Routes>
       </AuthProvider>
